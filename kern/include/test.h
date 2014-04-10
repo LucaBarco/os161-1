@@ -67,6 +67,9 @@ int malloctest(int, char **);
 int mallocstress(int, char **);
 int malloctest3(int, char **);
 int nettest(int, char **);
+#if OPT_SYNCHPROBS
+int netqueuetest(int, char **);
+#endif
 
 /* Routine for running a user-level program. */
 int runprogram(char *progname);

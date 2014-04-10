@@ -54,7 +54,7 @@
 #define NTHREADS  8
 
 static
-void
+int
 mallocthread(void *sm, unsigned long num)
 {
 	struct semaphore *sem = sm;
@@ -70,10 +70,10 @@ mallocthread(void *sm, unsigned long num)
 				kprintf("thread %lu: kmalloc returned NULL\n",
 					num);
 				V(sem);
-				return;
+				return -1;
 			}
 			kprintf("kmalloc returned null; test failed.\n");
-			return;
+			return -1;
 		}
 		if (oldptr2) {
 			kfree(oldptr2);
@@ -90,6 +90,7 @@ mallocthread(void *sm, unsigned long num)
 	if (sem) {
 		V(sem);
 	}
+	return 0;
 }
 
 int
@@ -122,7 +123,7 @@ mallocstress(int nargs, char **args)
 	kprintf("Starting kmalloc stress test...\n");
 
 	for (i=0; i<NTHREADS; i++) {
-		result = thread_fork("mallocstress", NULL,
+		result = thread_fork("mallocstress", NULL, NULL,
 				     mallocthread, sem, i);
 		if (result) {
 			panic("mallocstress: thread_fork failed: %s\n",

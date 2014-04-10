@@ -82,7 +82,7 @@ inititems(void)
 }
 
 static
-void
+int
 semtestthread(void *junk, unsigned long num)
 {
 	int i;
@@ -98,6 +98,7 @@ semtestthread(void *junk, unsigned long num)
 	}
 	kprintf("\n");
 	V(donesem);
+	return 0;
 }
 
 int
@@ -116,7 +117,7 @@ semtest(int nargs, char **args)
 	kprintf("ok\n");
 
 	for (i=0; i<NTHREADS; i++) {
-		result = thread_fork("semtest", NULL, semtestthread, NULL, i);
+		result = thread_fork("semtest", NULL, NULL, semtestthread, NULL, i);
 		if (result) {
 			panic("semtest: thread_fork failed: %s\n",
 			      strerror(result));
@@ -137,7 +138,7 @@ semtest(int nargs, char **args)
 }
 
 static
-void
+int
 fail(unsigned long num, const char *msg)
 {
 	kprintf("thread %lu: Mismatch on %s\n", num, msg);
@@ -146,11 +147,11 @@ fail(unsigned long num, const char *msg)
 	lock_release(testlock);
 
 	V(donesem);
-	thread_exit();
+	thread_exit(0);
 }
 
 static
-void
+int
 locktestthread(void *junk, unsigned long num)
 {
 	int i;
@@ -189,6 +190,7 @@ locktestthread(void *junk, unsigned long num)
 		lock_release(testlock);
 	}
 	V(donesem);
+	return 0;
 }
 
 
@@ -204,8 +206,8 @@ locktest(int nargs, char **args)
 	kprintf("Starting lock test...\n");
 
 	for (i=0; i<NTHREADS; i++) {
-		result = thread_fork("synchtest", NULL, locktestthread,
-				     NULL, i);
+		result = thread_fork("synchtest", NULL, NULL,
+				     locktestthread, NULL, i);
 		if (result) {
 			panic("locktest: thread_fork failed: %s\n",
 			      strerror(result));
@@ -221,7 +223,7 @@ locktest(int nargs, char **args)
 }
 
 static
-void
+int
 cvtestthread(void *junk, unsigned long num)
 {
 	int i;
@@ -247,7 +249,7 @@ cvtestthread(void *junk, unsigned long num)
 				kprintf("That's too fast... you must be "
 					"busy-looping\n");
 				V(donesem);
-				thread_exit();
+				thread_exit(0);
 			}
 
 		}
@@ -264,6 +266,7 @@ cvtestthread(void *junk, unsigned long num)
 		lock_release(testlock);
 	}
 	V(donesem);
+	return 0;
 }
 
 int
@@ -282,7 +285,7 @@ cvtest(int nargs, char **args)
 	testval1 = NTHREADS-1;
 
 	for (i=0; i<NTHREADS; i++) {
-		result = thread_fork("synchtest", NULL, cvtestthread, NULL, i);
+		result = thread_fork("synchtest", NULL, NULL, cvtestthread, NULL, i);
 		if (result) {
 			panic("cvtest: thread_fork failed: %s\n",
 			      strerror(result));
