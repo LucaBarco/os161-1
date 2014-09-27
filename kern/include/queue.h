@@ -17,8 +17,8 @@
  *      queue_destroy    - Destroys the queue: frees internal data structures,
  *                         frees the queue object.
  *                         DOES NOT free any elements contained in the queue.
- *                         To avoid memory leak, please free all the elements
- *                         in the queue.
+ *                         To avoid memory leak, please free all elements
+ *                         added to the queue.
  */
 
 struct queue; /* Opaque */

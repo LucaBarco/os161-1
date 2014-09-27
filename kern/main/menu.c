@@ -481,6 +481,7 @@ static const char *testmenu[] = {
 #if OPT_SYNCHPROBS
 	"[lst] List test             (1)     ",
 	"[qt]  Queue test            (1)     ",
+	"[ht]  Heap test             (1)     ",
 	"[nqu] Network queue test    (1)     ",
 #endif
 	"[sy1] Semaphore test                ",
@@ -571,6 +572,7 @@ static struct {
 	{ "bt",		bitmaptest },
 	{ "lst",	listtest },
 	{ "qt",		queuetest },
+	{ "ht",		heaptest },
 	{ "tlt",	threadlisttest },
 	{ "km1",	malloctest },
 	{ "km2",	mallocstress },

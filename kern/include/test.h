@@ -45,6 +45,7 @@ int arraytest(int, char **);
 int bitmaptest(int, char **);
 int listtest(int, char **);
 int queuetest(int, char **);
+int heaptest(int, char **);
 int threadlisttest(int, char **);
 
 /* thread tests */

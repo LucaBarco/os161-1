@@ -40,6 +40,8 @@ listtest(int nargs, char **args)
     KASSERT(list_getsize(newlist) == 0);
     KASSERT(list_isempty(newlist));
 
+    /* REPEAT to test if the list is reusable */
+
     /* push back TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));

@@ -17,8 +17,8 @@
  *      list_destroy    - Destroys the list: frees internal data structures.
  *                        frees the list object.
  *                        DOES NOT free any elements contained in the list.
- *                        To avoid memory leak, please free all the elements
- *                        in the list.
+ *                        To avoid memory leak, please free all elements
+ *                        added to the list.
  */
 
 struct list;  /* Opaque. */

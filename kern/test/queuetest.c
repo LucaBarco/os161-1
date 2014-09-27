@@ -40,6 +40,8 @@ queuetest(int nargs, char **args)
     KASSERT(queue_getsize(newqueue) == 0);
     KASSERT(queue_isempty(newqueue));
 
+    /* REPEAT to test if the queue is reusable */
+
     /* push back TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
