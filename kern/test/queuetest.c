@@ -25,7 +25,8 @@ queuetest(int nargs, char **args)
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
         *elem = i;
-        queue_push(newqueue, (void*) elem);
+        /* check for ENOMEM */
+        KASSERT(queue_push(newqueue, (void*) elem) == 0);
     }
     KASSERT(queue_getsize(newqueue) == TESTSIZE);
     KASSERT(!queue_isempty(newqueue));
@@ -46,7 +47,8 @@ queuetest(int nargs, char **args)
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
         *elem = i;
-        queue_push(newqueue, (void*) elem);
+        /* check for ENOMEM */
+        KASSERT(queue_push(newqueue, (void*) elem) == 0);
     }
     KASSERT(queue_getsize(newqueue) == TESTSIZE);
     KASSERT(!queue_isempty(newqueue));

@@ -18,11 +18,11 @@ queue_create(void)
     return q;
 }
 
-void
+int
 queue_push(struct queue* q, void* newval)
 {
     KASSERT(q != NULL);
-    list_push_back(q->vals, newval);
+    return list_push_back(q->vals, newval);
 }
 
 void

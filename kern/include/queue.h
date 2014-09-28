@@ -24,7 +24,7 @@
 struct queue; /* Opaque */
 
 struct queue* queue_create(void);
-void queue_push(struct queue* q, void* newval);
+int queue_push(struct queue* q, void* newval);
 void queue_pop(struct queue* q);
 void* queue_front(struct queue* q);
 int queue_isempty(struct queue* q);

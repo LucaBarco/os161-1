@@ -24,7 +24,7 @@
 struct list;  /* Opaque. */
 
 struct list* list_create(void);
-void list_push_back(struct list* lst, void* newval);
+int list_push_back(struct list* lst, void* newval);
 void list_pop_front(struct list* lst);
 void* list_front(struct list* lst);
 int list_isempty(struct list* lst);

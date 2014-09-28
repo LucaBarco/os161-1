@@ -25,7 +25,8 @@ listtest(int nargs, char **args)
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
         *elem = i;
-        list_push_back(newlist, (void*) elem);
+        /* check for ENOMEM */
+        KASSERT(list_push_back(newlist, (void*) elem) == 0);
     }
     KASSERT(list_getsize(newlist) == TESTSIZE);
     KASSERT(!list_isempty(newlist));
@@ -46,7 +47,8 @@ listtest(int nargs, char **args)
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
         *elem = i;
-        list_push_back(newlist, (void*) elem);
+        /* check for ENOMEM */
+        KASSERT(list_push_back(newlist, (void*) elem) == 0);
     }
     KASSERT(list_getsize(newlist) == TESTSIZE);
     KASSERT(!list_isempty(newlist));

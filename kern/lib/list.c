@@ -1,5 +1,6 @@
 #include <list.h>
 #include <types.h>
+#include <kern/errno.h>
 #include <lib.h>
 
 struct listnode {
@@ -48,14 +49,14 @@ list_create(void)
     return newlist;
 }
 
-void
+int
 list_push_back(struct list* lst, void* newval)
 {
     KASSERT(lst != NULL);
 
     struct listnode* newnode = listnode_create(newval);
     if (newnode == NULL) {
-        return;
+        return ENOMEM;
     }
 
     if (lst->size == 0) {
@@ -66,6 +67,8 @@ list_push_back(struct list* lst, void* newval)
     lst->tail = newnode;
 
     ++lst->size;
+    
+    return 0;
 }
 
 void
