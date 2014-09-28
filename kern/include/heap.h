@@ -26,7 +26,7 @@
 struct heap; /* Opaque. */
 
 struct heap* heap_create(int(*comparator)(const void*, const void*));
-void heap_push(struct heap* q, void* newval);
+int heap_push(struct heap* q, void* newval);
 void* heap_pop(struct heap* q);
 const void* heap_top(struct heap* q);
 int heap_isempty(struct heap* q);

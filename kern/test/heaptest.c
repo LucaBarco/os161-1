@@ -32,7 +32,8 @@ heaptest(int nargs, char **args)
     for (i = TESTSIZE - 1; i >= 0; --i) {
         elem = (int*)kmalloc(sizeof(int));
         *elem = i;
-        heap_push(newheap, (void*)elem);
+        /* check for ENOMEM */
+        KASSERT(heap_push(newheap, (void*)elem) == 0);
     }
     KASSERT(heap_getsize(newheap) == TESTSIZE);
     KASSERT(!heap_isempty(newheap));
@@ -54,7 +55,8 @@ heaptest(int nargs, char **args)
     for (i = TESTSIZE - 1; i >= 0; --i) {
         elem = (int*)kmalloc(sizeof(int));
         *elem = i;
-        heap_push(newheap, (void*)elem);
+        /* check for ENOMEM */
+        KASSERT(heap_push(newheap, (void*)elem) == 0);
     }
     KASSERT(heap_getsize(newheap) == TESTSIZE);
     KASSERT(!heap_isempty(newheap));

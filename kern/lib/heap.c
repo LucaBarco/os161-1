@@ -1,75 +1,65 @@
 #include <heap.h>
 #include <types.h>
+#include <kern/errno.h>
 #include <lib.h>
+#include <array.h>
 
-#define DEFAULT_SIZE 8
 #define PARENT(i) ((i) - 1) / 2
 #define LEFT(i) 2 * (i) + 1
 #define RIGHT(i) 2 * (i) + 2
 
 struct heap {
     int(*comparator)(const void*, const void*);
-    unsigned int size;
-    unsigned int max_size;
-    void** vals;
+    struct array* vals;
 };
 
 void bubble_up(struct heap* h, int index);
 void trickle_down(struct heap* h, int index);
 
 struct heap*
-heap_create(int (*comparator)(const void*, const void*))
+heap_create(int(*comparator)(const void*, const void*))
 {
     struct heap* h = (struct heap*)kmalloc(sizeof(struct heap));
     h->comparator = comparator;
-    h->size = 0;
-    h->max_size = DEFAULT_SIZE;
-    h->vals = (void**)kmalloc(DEFAULT_SIZE * sizeof(void*));
+    h->vals = array_create();
     if (h->vals == NULL) {
+        kfree(h);
         return NULL;
     }
     return h;
 }
 
-void
+int
 heap_push(struct heap* h, void* newval)
 {
     KASSERT(h != NULL);
-    /* if array is full, double the size of array */
-    if (h->size + 1 > h->max_size) {
-        // TODO: watch out for overflow.
-        /* double array */
-        void** new_array = (void**)kmalloc(h->max_size * 2 * sizeof(void*));
-        memcpy(new_array, h->vals, h->size * sizeof(void*));
-        kfree(h->vals);
-        h->vals = new_array;
-        h->max_size *= 2;
+    unsigned newindex;
+    int err = array_add(h->vals, newval, &newindex);
+    if (err == ENOMEM) {
+        array_destroy(h->vals);
+        /* TODO: check for error */
+        kfree(h);
+        return ENOMEM;
     }
-    h->vals[h->size] = newval;
     /* heapify up from the last element until root */
-    bubble_up(h, h->size);
-    ++h->size;
+    KASSERT(newindex == h->vals->num - 1);
+    bubble_up(h, h->vals->num - 1);
+    return 0;
 }
 
 void*
 heap_pop(struct heap* h)
 {
     KASSERT(h != NULL);
-    if (h->size == 0) {
+    if (h->vals->num == 0) {
         return NULL;
     }
-    void* top = h->vals[0];
-    h->vals[0] = h->vals[h->size - 1];
-    --h->size;
+    void* top = array_get(h->vals, 0);
+    void* last = array_get(h->vals, h->vals->num - 1);
+    array_set(h->vals, 0, last);
+    --h->vals->num;
     trickle_down(h, 0);
-    /* half the array */
-    if (2 * h->size < h->max_size) {
-        void** new_array = (void**)kmalloc(h->max_size / 2 * sizeof(void*));
-        memcpy(new_array, h->vals, h->size * sizeof(void*));
-        kfree(h->vals);
-        h->vals = new_array;
-        h->max_size /= 2;
-    }
+    /* TODO: array does not yet support shrinking */
     return top;
 }
 
@@ -77,28 +67,28 @@ const void*
 heap_top(struct heap* h)
 {
     KASSERT(h != NULL);
-    return h->vals[0];
+    return array_get(h->vals, 0);
 }
 
 int
 heap_isempty(struct heap* h)
 {
     KASSERT(h != NULL);
-    return (h->size == 0);
+    return (array_num(h->vals) == 0);
 }
 
 unsigned int
 heap_getsize(struct heap* h)
 {
     KASSERT(h != NULL);
-    return h->size;
+    return array_num(h->vals);
 }
 
 void
 heap_destroy(struct heap* h)
 {
     if (h != NULL) {
-        kfree(h->vals);
+        array_destroy(h->vals);
     }
     kfree(h);
 }
@@ -106,14 +96,17 @@ heap_destroy(struct heap* h)
 void
 bubble_up(struct heap* h, int index)
 {
+    KASSERT(h != NULL);
     KASSERT(index >= 0);
+    struct array* vals = h->vals;
     int p = PARENT(index);
     void* t;
-    while (index > 0 && h->comparator(h->vals[index], h->vals[p])) {
+    while (index > 0 &&
+        h->comparator(array_get(vals, index), array_get(vals, p))) {
         /* SWAP */
-        t = h->vals[index];
-        h->vals[index] = h->vals[p];
-        h->vals[p] = t;
+        t = array_get(vals, index);
+        array_set(vals, index, array_get(vals, p));
+        array_set(vals, p, t);
         index = p;
         p = PARENT(index);
     }
@@ -122,30 +115,35 @@ bubble_up(struct heap* h, int index)
 void
 trickle_down(struct heap* h, int index)
 {
+    KASSERT(h != NULL);
+    KASSERT(index >= 0);
+    struct array* vals = h->vals;
     int j;
     unsigned int r, l;
     void* t;
     while (index >= 0) {
         j = -1;
         r = RIGHT(index);
-        if (r < h->size && h->comparator(h->vals[r], h->vals[index])) {
+        if (r < h->vals->num &&
+            h->comparator(array_get(vals, r), array_get(vals, index))) {
             l = LEFT(index);
-            if (h->comparator(h->vals[l], h->vals[r])) {
+            if (h->comparator(array_get(vals, l), array_get(vals, r))) {
                 j = l;
             } else {
                 j = r;
             }
         } else {
             l = LEFT(index);
-            if (l < h->size && h->comparator(h->vals[l], h->vals[index])) {
+            if (l < h->vals->num &&
+                h->comparator(array_get(vals, l), array_get(vals, index))) {
                 j = l;
             }
         }
         if (j >= 0) {
             /* SWAP */
-            t = h->vals[j];
-            h->vals[j] = h->vals[index];
-            h->vals[index] = t;
+            t = array_get(vals, j);
+            array_set(vals, j, array_get(vals, index));
+            array_set(vals, index, t);
         }
         index = j;
     }
