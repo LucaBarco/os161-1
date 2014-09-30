@@ -278,6 +278,7 @@ include   arch/sys161/conf/conf.arch
 file      lib/array.c
 file      lib/bitmap.c
 file      lib/bswap.c
+file      lib/hashtable.c
 file      lib/heap.c
 file      lib/kgets.c
 file      lib/kprintf.c
@@ -434,6 +435,7 @@ file		test/arraytest.c
 file		test/bitmaptest.c
 file		test/listtest.c
 file		test/queuetest.c
+file		test/hashtabletest.c
 file		test/heaptest.c
 file		test/threadlisttest.c
 file		test/threadtest.c

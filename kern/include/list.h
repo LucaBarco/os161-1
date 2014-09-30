@@ -12,6 +12,17 @@
  *      list_front      - Returns the next element from the front of the list.
  *                        Does not remove the element from the list.
  *                        Returns NULL if the list is empty.
+ *      list_find       - Returns the element equal to the given query element,
+ *                        Two elements are equal if the given comparator
+ *                        evaluates to zero.
+ *                        Does not remove the element from the list.
+ *                        Returns NULL if the element is not in the list.
+ *      list_remove     - Removes the element equal to the given query element,
+ *                        Two elements are equal if the given comparator
+ *                        evaluates to zero.
+ *                        Returns the element if it is found and removed from 
+ *                        the list.
+ *                        Returns NULL if the element is not in the list.
  *      list_isempty    - Returns whether the list is empty or not.
  *      list_getsize    - Returns the number of elements in the list.
  *      list_destroy    - Destroys the list: frees internal data structures.
@@ -27,6 +38,8 @@ struct list* list_create(void);
 int list_push_back(struct list* lst, void* newval);
 void list_pop_front(struct list* lst);
 void* list_front(struct list* lst);
+void* list_find(struct list* lst, void* query_val, int(*comparator)(void* left, void* right));
+void* list_remove(struct list* lst, void* query_val, int(*comparator)(void* left, void* right));
 int list_isempty(struct list* lst);
 unsigned int list_getsize(struct list* lst);
 void list_destroy(struct list* lst);

@@ -79,13 +79,16 @@ list_pop_front(struct list* lst)
     if (lst->size == 0) {
         return;
     }
-
+    
+    struct listnode* old_head = lst->head;
     lst->head = lst->head->next;
     --lst->size;
 
     if (lst->size == 0) {
         lst->tail = NULL;
     }
+
+    kfree(old_head);
 }
 
 void*
@@ -98,6 +101,46 @@ list_front(struct list* lst)
     }
 
     return lst->head->val;
+}
+
+void*
+list_find(struct list* lst, void* query_val, int(*comparator)(void* left, void* right))
+{
+    KASSERT(lst != NULL);
+
+    struct listnode* p = lst->head;
+    while (p) {
+        if (comparator(p->val, query_val) == 0) {
+            return p->val;
+        }
+        p = p->next;
+    }
+    return NULL;
+}
+
+void*
+list_remove(struct list* lst, void* query_val, int(*comparator)(void* left, void* right))
+{
+    KASSERT(lst != NULL);
+    void* res = NULL;
+    struct listnode* p;
+    struct listnode* q = NULL;
+    for (p = lst->head; p != NULL; q = p, p = p->next) {
+        if (comparator(p->val, query_val) == 0) {
+            if (q == NULL) {
+                /* Removing from head */
+                lst->head = p->next;
+            } else {
+                /* Removing after head. */
+                q->next = p->next;
+            }
+            res = p->val;
+            kfree(p);
+            --lst->size;
+            break;
+        }
+    }
+    return res;
 }
 
 int
