@@ -4,12 +4,20 @@
 #include <kern/errno.h>
 #include <lib.h>
 
+#define HASHTABLETYPE 4444
+#define KVTYPE 4445
+
+/* a lightweight canary to prevent use after free errors */
+#define KASSERT_HASHTABLE(h) KASSERT(h->datatype == HASHTABLETYPE)
+#define KASSERT_KV(h) KASSERT(h->datatype == KVTYPE)
+
 /* LOAD FACTOR = 1 / LF_MULTIPLE */
 #define LF_MULTIPLE 2
 /* Minimum size of the underlying array */
 #define MIN_SIZE 8
 
 struct hashtable {
+    int datatype;
     /* num of items in hashtable */
     unsigned int size;
     /* num of slots in the underlying array */
@@ -21,12 +29,27 @@ struct hashtable {
 };
 
 struct kv_pair {
+    int datatype;
     /* key is a C string */
     char* key;
     unsigned int keylen;
     /* value can be of any type */
     void* val;
 };
+
+static
+struct kv_pair* kv_create(char* key, unsigned int keylen, void* val)
+{
+    struct kv_pair* new_item = (struct kv_pair*)kmalloc(sizeof(struct kv_pair));
+    if (new_item == NULL) {
+        return NULL;
+    }
+    new_item->datatype = KVTYPE;
+    new_item->key = key;
+    new_item->keylen = keylen;
+    new_item->val = val;
+    return new_item;
+}
 
 /* 
  * djb2 hash function
@@ -104,6 +127,7 @@ hashtable_create(void)
     if (err == ENOMEM) {
         return NULL;
     }
+    h->datatype = HASHTABLETYPE;
     return h;
 }
 
@@ -117,6 +141,8 @@ void
 rehash(struct hashtable* h,
        struct list** source_array, unsigned int source_size)
 {
+    KASSERT(h != NULL);
+    KASSERT_HASHTABLE(h);
     unsigned int i;
     struct list* chain;
     struct kv_pair* item;
@@ -126,6 +152,7 @@ rehash(struct hashtable* h,
         if (list_getsize(chain) > 0) {
             item = (struct kv_pair*)list_front(chain);
             while (item) {
+                KASSERT_KV(item);
                 hashtable_add(h, item->key, item->keylen, item->val);
                 list_pop_front(chain);
                 kfree(item);
@@ -145,6 +172,8 @@ static
 int
 grow(struct hashtable* h)
 {
+    KASSERT(h != NULL);
+    KASSERT_HASHTABLE(h);
     struct list** old_array = h->vals;
     unsigned int old_arraysize = h->arraysize;
 
@@ -179,6 +208,7 @@ int
 hashtable_add(struct hashtable* h, char* key, unsigned int keylen, void* val)
 {
     KASSERT(h != NULL);
+    KASSERT_HASHTABLE(h);
     /* If LOAD_FACTOR exceeded, double the size of array. */
     if ((h->size + 1) * LF_MULTIPLE > h->arraysize) {
         grow(h);
@@ -189,13 +219,10 @@ hashtable_add(struct hashtable* h, char* key, unsigned int keylen, void* val)
     KASSERT(chain != NULL);
     
     /* Append the new item to end of chain. */
-    struct kv_pair* new_item = (struct kv_pair*)kmalloc(sizeof(struct kv_pair));
+    struct kv_pair* new_item = kv_create(key, keylen, val);
     if (new_item == NULL) {
         return ENOMEM;
     }
-    new_item->key = key;
-    new_item->keylen = keylen;
-    new_item->val = val;
     int err = list_push_back(chain, new_item);
     if (err == ENOMEM) {
         return ENOMEM;
@@ -212,6 +239,8 @@ key_comparator(void* left, void* right)
 {
     struct kv_pair* l = (struct kv_pair*)left;
     struct kv_pair* r = (struct kv_pair*)right;
+    KASSERT_KV(l);
+    KASSERT_KV(r);
     if (l->keylen == r->keylen) {
         return strcmp(l->key, r->key);
     }
@@ -222,6 +251,7 @@ void*
 hashtable_find(struct hashtable* h, char* key, unsigned int keylen)
 {
     KASSERT(h != NULL);
+    KASSERT_HASHTABLE(h);
 
     /* Compute the hash to index into array. */
     int index = hash(key, keylen) % h->arraysize;
@@ -230,6 +260,7 @@ hashtable_find(struct hashtable* h, char* key, unsigned int keylen)
     
     /* Build a kv_pair object with the query key. */
     struct kv_pair query_item;
+    query_item.datatype = KVTYPE;
     query_item.key = key;
     query_item.keylen = keylen;
 
@@ -238,6 +269,7 @@ hashtable_find(struct hashtable* h, char* key, unsigned int keylen)
     if (found == NULL) {
         return NULL;
     }
+    KASSERT_KV(found);
     return found->val;
 }
 
@@ -250,6 +282,8 @@ static
 int
 shrink(struct hashtable* h)
 {
+    KASSERT(h != NULL);
+    KASSERT_HASHTABLE(h);
     struct list** old_array = h->vals;
     unsigned int old_arraysize = h->arraysize;
     unsigned int new_arraysize = old_arraysize / 2;
@@ -285,6 +319,7 @@ void*
 hashtable_remove(struct hashtable* h, char* key, unsigned int keylen)
 {
     KASSERT(h != NULL);
+    KASSERT_HASHTABLE(h);
 
     /* Compute the hash to index into array. */
     int index = hash(key, keylen) % h->arraysize;
@@ -293,6 +328,7 @@ hashtable_remove(struct hashtable* h, char* key, unsigned int keylen)
     
     /* Build a kv_pair object with the query key. */
     struct kv_pair query_item;
+    query_item.datatype = KVTYPE;
     query_item.key = key;
     query_item.keylen = keylen;
 
@@ -302,6 +338,7 @@ hashtable_remove(struct hashtable* h, char* key, unsigned int keylen)
         /* Key does not exist. */
         return NULL;
     }
+    KASSERT_KV(removed);
 
     /* Key value pair removed. */
     --h->size;
@@ -320,6 +357,7 @@ int
 hashtable_isempty(struct hashtable* h)
 {
     KASSERT(h != NULL);
+    KASSERT_HASHTABLE(h);
     return (h->size == 0);
 }
 
@@ -327,6 +365,7 @@ unsigned int
 hashtable_getsize(struct hashtable* h)
 {
     KASSERT(h != NULL);
+    KASSERT_HASHTABLE(h);
     return h->size;
 }
 
@@ -334,6 +373,7 @@ void
 hashtable_destroy(struct hashtable* h)
 {
     if (h != NULL) {
+        KASSERT_HASHTABLE(h);
         kfree(h->vals);
     }
     kfree(h);
@@ -343,6 +383,7 @@ void
 hashtable_assertvalid(struct hashtable* h)
 {
     KASSERT(h != NULL);
+    KASSERT_HASHTABLE(h);
     /* Validate if the size of items in the hashtable is correct. */
     unsigned int count = 0;
     unsigned int i, j, size;
@@ -356,6 +397,7 @@ hashtable_assertvalid(struct hashtable* h)
         /* check if key hashes to the correct index */
         for (j = 0; j < size; ++j) {
             kv = (struct kv_pair*)list_front(chain);
+            KASSERT_KV(kv);
             KASSERT(hash(kv->key, kv->keylen) % h->arraysize == i);
             list_pop_front(chain);
             list_push_back(chain, kv);
