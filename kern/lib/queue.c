@@ -74,3 +74,11 @@ queue_destroy(struct queue* q)
     }
     kfree(q);
 }
+
+void
+queue_assertvalid(struct queue* q)
+{
+    KASSERT(q != NULL);
+    KASSERT_QUEUE(q);
+    list_assertvalid(q->vals);
+}

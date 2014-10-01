@@ -27,6 +27,7 @@ listtest(int nargs, char **args)
     KASSERT(newlist != NULL);
     KASSERT(list_getsize(newlist) == 0);
     KASSERT(list_isempty(newlist));
+    list_assertvalid(newlist);
 
     int i, found, removed;
     int* elem;
@@ -42,6 +43,7 @@ listtest(int nargs, char **args)
     }
     KASSERT(list_getsize(newlist) == TESTSIZE);
     KASSERT(!list_isempty(newlist));
+    list_assertvalid(newlist);
 
     /* remove TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
@@ -52,6 +54,7 @@ listtest(int nargs, char **args)
     }
     KASSERT(list_getsize(newlist) == 0);
     KASSERT(list_isempty(newlist));
+    list_assertvalid(newlist);
 
     /* push back TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
@@ -62,6 +65,7 @@ listtest(int nargs, char **args)
     }
     KASSERT(list_getsize(newlist) == TESTSIZE);
     KASSERT(!list_isempty(newlist));
+    list_assertvalid(newlist);
 
     /* pop front TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
@@ -72,6 +76,7 @@ listtest(int nargs, char **args)
     }
     KASSERT(list_getsize(newlist) == 0);
     KASSERT(list_isempty(newlist));
+    list_assertvalid(newlist);
 
     /* REPEAT to test if the list is reusable */
 
@@ -87,6 +92,7 @@ listtest(int nargs, char **args)
     }
     KASSERT(list_getsize(newlist) == TESTSIZE);
     KASSERT(!list_isempty(newlist));
+    list_assertvalid(newlist);
 
     /* remove TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
@@ -97,6 +103,7 @@ listtest(int nargs, char **args)
     }
     KASSERT(list_getsize(newlist) == 0);
     KASSERT(list_isempty(newlist));
+    list_assertvalid(newlist);
 
     /* push back TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
@@ -107,6 +114,7 @@ listtest(int nargs, char **args)
     }
     KASSERT(list_getsize(newlist) == TESTSIZE);
     KASSERT(!list_isempty(newlist));
+    list_assertvalid(newlist);
 
     /* pop front TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
@@ -117,6 +125,7 @@ listtest(int nargs, char **args)
     }
     KASSERT(list_getsize(newlist) == 0);
     KASSERT(list_isempty(newlist));
+    list_assertvalid(newlist);
 
     /* destroys the list */
     list_destroy(newlist);

@@ -18,6 +18,7 @@ queuetest(int nargs, char **args)
     KASSERT(newqueue != NULL);
     KASSERT(queue_getsize(newqueue) == 0);
     KASSERT(queue_isempty(newqueue));
+    queue_assertvalid(newqueue);
 
     int i;
     int* elem;
@@ -30,6 +31,7 @@ queuetest(int nargs, char **args)
     }
     KASSERT(queue_getsize(newqueue) == TESTSIZE);
     KASSERT(!queue_isempty(newqueue));
+    queue_assertvalid(newqueue);
 
     /* pop front TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
@@ -40,6 +42,7 @@ queuetest(int nargs, char **args)
     }
     KASSERT(queue_getsize(newqueue) == 0);
     KASSERT(queue_isempty(newqueue));
+    queue_assertvalid(newqueue);
 
     /* REPEAT to test if the queue is reusable */
 
@@ -52,6 +55,7 @@ queuetest(int nargs, char **args)
     }
     KASSERT(queue_getsize(newqueue) == TESTSIZE);
     KASSERT(!queue_isempty(newqueue));
+    queue_assertvalid(newqueue);
 
     /* pop front TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
@@ -62,6 +66,7 @@ queuetest(int nargs, char **args)
     }
     KASSERT(queue_getsize(newqueue) == 0);
     KASSERT(queue_isempty(newqueue));
+    queue_assertvalid(newqueue);
 
     queue_destroy(newqueue);
 

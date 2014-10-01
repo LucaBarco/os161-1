@@ -164,6 +164,9 @@ list_remove(struct list* lst, void* query_val, int(*comparator)(void* left, void
             break;
         }
     }
+    if (lst->size == 0) {
+        lst->tail = NULL;
+    }
     return res;
 }
 
@@ -205,3 +208,25 @@ list_destroy(struct list* lst)
     kfree(lst);
 }
 
+void
+list_assertvalid(struct list* lst)
+{
+    KASSERT(lst != NULL);
+    KASSERT_LIST(lst);
+    /* Validate if the stated number of items in the list is correct. */
+    unsigned int count = 0;
+    struct listnode* p;
+    struct listnode* prev = NULL;
+    for (p = lst->head; p != NULL; p = p->next) {
+        KASSERT_LISTNODE(p);
+        ++count;
+        prev = p;
+    }
+    /* Validate if the tail is reachable from the head. */
+    if (count == 0) {
+        KASSERT(lst->tail == NULL);
+    } else {
+        KASSERT(prev == lst->tail);
+    }
+    KASSERT(count == lst->size);
+}

@@ -164,3 +164,22 @@ trickle_down(struct heap* h, int index)
     }
 }
 
+static
+void assert_heap_property(struct array* vals, unsigned int index, unsigned int max,
+                          int(*comparator)(const void* l, const void* r))
+{
+    if (index < max) {
+        KASSERT(comparator(array_get(vals, index), array_get(vals, LEFT(index))));
+        KASSERT(comparator(array_get(vals, index), array_get(vals, RIGHT(index))));
+        assert_heap_property(vals, LEFT(index), max, comparator);
+        assert_heap_property(vals, RIGHT(index), max, comparator);
+    }
+}
+
+void
+heap_assertvalid(struct heap* h)
+{
+    KASSERT(h != NULL);
+    KASSERT_HEAP(h);
+    assert_heap_property(h->vals, 0, array_num(h->vals), h->comparator);
+}

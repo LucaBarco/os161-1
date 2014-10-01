@@ -392,6 +392,7 @@ hashtable_assertvalid(struct hashtable* h)
     for (i = 0; i < h->arraysize; ++i) {
         chain = h->vals[i];
         KASSERT(chain != NULL);
+        list_assertvalid(chain);
         size = list_getsize(chain);
         count += size;
         /* check if key hashes to the correct index */
