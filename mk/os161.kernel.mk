@@ -192,10 +192,15 @@ install:
 # Run tags on all the sources and header files. This is probably not
 # the most useful way to do this and may need attention. (XXX?)
 #
-tags:
+ctags:
 	ctags $(ALLSRCS) $(TAGS_HEADERS)
 	sed -ie s/\.\.\\/\.\.\\/// tags
 	mv tags ../..
+
+etags:
+	etags $(ALLSRCS) $(TAGS_HEADERS)
+	sed -ie s/\.\.\\/\.\.\\/// TAGS
+	mv TAGS ../..
 
 #
 # This tells make that these rules are not files so it (hopefully)
