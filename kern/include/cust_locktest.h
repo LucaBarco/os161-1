@@ -5,6 +5,8 @@
 
 
 
+int locktest_holder(void);
+
 int locktest_extended(int, char **);
 
 

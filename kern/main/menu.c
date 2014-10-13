@@ -41,7 +41,7 @@
 #include <sfs.h>
 #include <syscall.h>
 #include <test.h>
-#include <cust_locktest.h>
+#include "cust_locktest.h"
 #include "opt-sfs.h"
 #include "opt-net.h"
 

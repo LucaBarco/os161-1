@@ -4,6 +4,7 @@
 #include <thread.h>
 #include <synch.h>
 #include <test.h>
+#include <cust_locktest.h>
 
 
 
@@ -13,6 +14,8 @@
 int locktest_holder()
 {
     kprintf("jo!");
+
+    return 1;
 }
 
 
@@ -21,13 +24,13 @@ int locktest_holder()
 int
 locktest_extended(int nargs, char **args)
 {
-    int i, result;
+
 
     (void)nargs;
     (void)args;
 
 
-    locktest_holder();
+    //locktest_holder();
 
     return 1;
 
