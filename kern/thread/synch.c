@@ -206,8 +206,12 @@ lock_release(struct lock *lock)
 {
         // acquire spinlock to release this lock
         spinlock_acquire(&lock->lk_spinlock); 
-        lock->lk_busy = false;
-        
+
+        // we should be holding this lock and the lock should be busy
+        KASSERT(lock->lk_thread == curthread);
+        KASSERT(lock->lk_busy);
+
+        lock->lk_busy = false;        
         lock->lk_thread = NULL;
 
         wchan_wakeone(lock->lk_wchan, &lock->lk_spinlock);
@@ -221,7 +225,7 @@ lock_do_i_hold(struct lock *lock)
         // Write this
 
 
-        // put spinlock here?
+        // TODO: put spinlock here?
         //
         bool do_i =  lock->lk_thread == curthread;
 

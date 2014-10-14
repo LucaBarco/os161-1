@@ -80,7 +80,7 @@ static int locktest_holder_helper_function(void *junk, unsigned long num){
 
 
 // tests if the holder is always correct
-int locktest_holder()
+static int locktest_holder_multiple()
 {
     
     int result;
@@ -88,7 +88,7 @@ int locktest_holder()
     
 
     
-    kprintf("Starting lock holder test...\n");
+    kprintf("Starting lock holder test  (multiple)...\n");
 
     for (int i=0; i<NTHREADS; i++) {
         result = thread_fork("holder_test", NULL, NULL, locktest_holder_helper_function, NULL, i);
@@ -101,9 +101,39 @@ int locktest_holder()
         P(donesem);
     }
 
-    kprintf("Lock test done.\n");
+    kprintf("Lock holder test done. (multiple)\n");
 
     return 0;
+}
+
+
+// test if I can release a lock that I don't hold
+static int locktest_holder_single_helper(void *junk, unsigned long num){
+
+    (void) junk;
+
+    lock_release(testlock);
+    fail("Kernel should have paniced", num);
+
+    return 0;
+
+}
+
+static void locktest_holder_single(){
+
+    // acquire lock on this thread 
+    lock_acquire(testlock);
+
+    // create new thread
+    int result = thread_fork("holder_test_single", NULL, NULL, locktest_holder_single_helper, NULL, 0);
+        if (result) {
+            panic("locktest: thread_fork failed: %s\n",
+                  strerror(result));
+        }
+
+
+
+
 }
 
 
@@ -123,7 +153,9 @@ locktest_extended(int nargs, char **args)
     // initialize lock
     testlock = lock_create("testlock");
 
-    locktest_holder();
+    locktest_holder_multiple();
+
+    //locktest_holder_single();
 
     return 0;
 
