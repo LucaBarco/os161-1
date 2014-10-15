@@ -56,6 +56,10 @@ int threadtest3(int, char **);
 int semtest(int, char **);
 int locktest(int, char **);
 int cvtest(int, char **);
+int cvtest_wait(int, char **);
+int cvtest_signal(int, char **);
+int cvtest_broadcast(int, char **);
+int asst1_tests(int, char**);
 
 /* filesystem tests */
 int fstest(int, char **);

@@ -283,13 +283,13 @@ cv_wait(struct cv *cv, struct lock *lock)
     KASSERT(curthread->t_in_interrupt == false);
     KASSERT(lock_do_i_hold(lock));
 
-	spinlock_acquire(&cv->cv_lock);
+    spinlock_acquire(&cv->cv_lock);
         lock_release(lock);
-        KASSERT(lock_do_i_hold(lock) == FALSE);
+        KASSERT(lock_do_i_hold(lock) == false);
         wchan_sleep(cv->cv_wchan, &cv->cv_lock);
-        lock_acquire(lock);
-        KASSERT(lock_do_i_hold(lock));
-	spinlock_release(&cv->cv_lock);
+    spinlock_release(&cv->cv_lock);
+    lock_acquire(lock);
+    KASSERT(lock_do_i_hold(lock));
 }
 
 void
@@ -299,11 +299,9 @@ cv_signal(struct cv *cv, struct lock *lock)
     KASSERT(lock != NULL);
     KASSERT(lock_do_i_hold(lock));
 
-	spinlock_acquire(&cv->cv_lock);
-        lock_release(lock);
-        KASSERT(lock_do_i_hold(lock) == FALSE);
+    spinlock_acquire(&cv->cv_lock);
         wchan_wakeone(cv->cv_wchan, &cv->cv_lock);
-	spinlock_release(&cv->cv_lock);
+    spinlock_release(&cv->cv_lock);
 }
 
 void
@@ -313,9 +311,7 @@ cv_broadcast(struct cv *cv, struct lock *lock)
     KASSERT(lock != NULL);
     KASSERT(lock_do_i_hold(lock));
 
-	spinlock_acquire(&cv->cv_lock);
-        lock_release(lock);
-        KASSERT(lock_do_i_hold(lock) == FALSE);
+    spinlock_acquire(&cv->cv_lock);
         wchan_wakeall(cv->cv_wchan, &cv->cv_lock);
-	spinlock_release(&cv->cv_lock);
+    spinlock_release(&cv->cv_lock);
 }
