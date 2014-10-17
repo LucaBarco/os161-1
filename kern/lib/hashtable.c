@@ -116,15 +116,21 @@ struct hashtable*
 hashtable_create(void)
 {
     struct hashtable* h = (struct hashtable*)kmalloc(sizeof(struct hashtable));
+    if (h == NULL) {
+        return NULL;
+    }
     h->size = 0;
     h->arraysize = MIN_SIZE;
     h->vals = (struct list**)kmalloc(MIN_SIZE * sizeof(struct list*));
     if (h->vals == NULL) {
+        kfree(h);
         return NULL;
     }
     /* Allocate lists for the array. */
     int err = init_array_with_lists(h->vals, 0, h->arraysize);
     if (err == ENOMEM) {
+        kfree(h->vals);
+        kfree(h);
         return NULL;
     }
     h->datatype = HASHTABLETYPE;

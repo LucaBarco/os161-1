@@ -34,6 +34,7 @@ listtest(int nargs, char **args)
     /* push back TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
+        KASSERT(elem != NULL);
         *elem = i;
         /* check for ENOMEM */
         KASSERT(list_push_back(newlist, (void*) elem) == 0);
@@ -48,6 +49,7 @@ listtest(int nargs, char **args)
     /* remove TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
+        KASSERT(elem != NULL);
         *elem = i;
         removed = *(int*)list_remove(newlist, (void*) elem, &int_comparator);
         KASSERT(removed == i);
@@ -59,6 +61,7 @@ listtest(int nargs, char **args)
     /* push back TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
+        KASSERT(elem != NULL);
         *elem = i;
         /* check for ENOMEM */
         KASSERT(list_push_back(newlist, (void*) elem) == 0);
@@ -83,6 +86,7 @@ listtest(int nargs, char **args)
     /* push back TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
+        KASSERT(elem != NULL);
         *elem = i;
         /* check for ENOMEM */
         KASSERT(list_push_back(newlist, (void*) elem) == 0);
@@ -97,6 +101,7 @@ listtest(int nargs, char **args)
     /* remove TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
+        KASSERT(elem != NULL);
         *elem = i;
         removed = *(int*)list_remove(newlist, (void*) elem, &int_comparator);
         KASSERT(removed == i);
@@ -108,6 +113,7 @@ listtest(int nargs, char **args)
     /* push back TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
+        KASSERT(elem != NULL);
         *elem = i;
         /* check for ENOMEM */
         KASSERT(list_push_back(newlist, (void*) elem) == 0);
