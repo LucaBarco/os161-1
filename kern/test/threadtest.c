@@ -118,6 +118,39 @@ runthreads(int doloud)
 	}
 }
 
+/* for thread_join tests */
+static
+int 
+go(void* p, unsigned long n)
+{
+	(void)p; //unused
+
+	kprintf("Hello from thread %ld\n", n);
+	return 100 + n;
+}
+
+static
+void
+runthreadjointest(void)
+{
+	struct thread *children[NTHREADS];
+	int err;
+	int ret;
+	
+	for(int i=0; i < NTHREADS; i++)
+		thread_fork("child", &(children[i]), NULL, &go, NULL, i);
+
+	for(int i=0; i < NTHREADS; i++)
+	{
+		err = thread_join(children[i], &ret);
+		kprintf("Thread %d returned with %d\n", i, ret);
+	}
+
+	kprintf("Main thread done.\n");
+}
+
+/* ---------------------------------- */
+
 
 int
 threadtest(int nargs, char **args)
@@ -145,4 +178,19 @@ threadtest2(int nargs, char **args)
 	kprintf("\nThread test 2 done.\n");
 
 	return 0;
+}
+
+
+// thest for thread_join
+int
+threadtest4(int nargs, char **args)
+{
+    (void) nargs;
+    (void) args;
+
+    kprintf("Starting thread test 4 (join)...\n");
+    runthreadjointest();
+    kprintf("\nThread test 4 (join) done.\n");
+
+    return 0;
 }

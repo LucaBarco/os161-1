@@ -34,7 +34,7 @@
 #include <spinlock.h>
 #include <threadlist.h>
 #include <machine/vm.h>  /* for TLBSHOOTDOWN_MAX */
-
+#include <synch.h>
 
 /*
  * Per-cpu structure
@@ -58,7 +58,7 @@ struct cpu {
 	 * Accessed only by this cpu.
 	 */
 	struct thread *c_curthread;	/* Current thread on cpu */
-	struct threadlist c_zombies;	/* List of exited threads */
+	
 	unsigned c_hardclocks;		/* Counter of hardclock() calls */
 	unsigned c_spinlocks;		/* Counter of spinlocks held */
 
@@ -66,9 +66,21 @@ struct cpu {
 	 * Accessed by other cpus.
 	 * Protected by the runqueue lock.
 	 */
+	struct threadlist c_zombies;	/* List of exited threads */
+	struct spinlock c_zombies_lock;
+
 	bool c_isidle;			/* True if this cpu is idle */
 	struct threadlist c_runqueue;	/* Run queue for this cpu */
 	struct spinlock c_runqueue_lock;
+
+	/*
+	 * Accessed only by this cpu.
+	 * to store threads that are zombies but joinable and waiting to be joined
+	 */
+	struct threadlist c_zombies_join;	/* Run queue for this cpu */
+	struct spinlock c_zombies_join_lock;
+	struct cv cv_parents;
+	struct lock cv_parents_lock;
 
 	/*
 	 * Accessed by other cpus.

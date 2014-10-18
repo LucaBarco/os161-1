@@ -107,6 +107,7 @@ static int locktest_holder_multiple()
 }
 
 
+/*
 // test if I can release a lock that I don't hold
 static int locktest_holder_single_helper(void *junk, unsigned long num){
 
@@ -118,6 +119,7 @@ static int locktest_holder_single_helper(void *junk, unsigned long num){
     return 0;
 
 }
+
 
 static void locktest_holder_single(){
 
@@ -136,7 +138,7 @@ static void locktest_holder_single(){
 
 }
 
-
+*/
 
 
 // execute all tests in this testsuite
