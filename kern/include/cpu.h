@@ -79,8 +79,6 @@ struct cpu {
 	 */
 	struct threadlist c_zombies_join;	/* Run queue for this cpu */
 	struct spinlock c_zombies_join_lock;
-	struct cv cv_parents;
-	struct lock cv_parents_lock;
 
 	/*
 	 * Accessed by other cpus.

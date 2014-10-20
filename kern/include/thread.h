@@ -109,6 +109,7 @@ struct thread {
 	struct thread *t_parent;
 	int t_childs_to_join;
 	int t_return;
+	struct semaphore *t_join_sem;
 	/* add more here as needed */
 };
 

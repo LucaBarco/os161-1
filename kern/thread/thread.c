@@ -159,6 +159,7 @@ thread_create(const char *name)
 	thread->t_parent = NULL;
 	thread->t_childs_to_join = 0;
 	thread->t_return = 0;
+	thread->t_join_sem = NULL;
 
 	return thread;
 }
@@ -235,8 +236,6 @@ cpu_create(unsigned hardware_number)
 	// list for the with join marked threads that have exited but have not been joined
 	threadlist_init(&c->c_zombies_join);
 	spinlock_init(&c->c_zombies_join_lock);
-	c->cv_parents = *cv_create(namebuf);
-	c->cv_parents_lock = *lock_create(namebuf);
 
 	cpu_machdep_init(c);
 
@@ -539,6 +538,8 @@ thread_fork(const char *name,
 		curthread->t_childs_to_join++;
 		// set parent thread
 		newthread->t_parent = curthread;
+		// create semaphore
+		newthread->t_join_sem = sem_create(name, 0);
 	}
 	
 
@@ -584,7 +585,6 @@ void
 thread_switch(threadstate_t newstate, struct wchan *wc, struct spinlock *lk)
 {
 	struct thread *cur, *next;
-	struct cpu *cpu_parent;
 	int spl;
 
 	DEBUGASSERT(curcpu->c_curthread == curthread);
@@ -648,14 +648,16 @@ thread_switch(threadstate_t newstate, struct wchan *wc, struct spinlock *lk)
 		spinlock_acquire(&curcpu->c_zombies_join_lock);
 		threadlist_addtail(&curcpu->c_zombies_join, cur);
 		spinlock_release(&curcpu->c_zombies_join_lock);
-		// wake waiting parents	
-		cpu_parent = cur->t_parent->t_cpu;	
-		lock_acquire(&cpu_parent->cv_parents_lock);
-		cv_broadcast(&cpu_parent->cv_parents, &cpu_parent->cv_parents_lock);
-		lock_release(&cpu_parent->cv_parents_lock);
 		break;
 	}
 	cur->t_state = newstate;
+
+	// added for ASST1
+	// wake waiting parents	
+	if (cur->t_parent != NULL) 
+	{
+		V(cur->t_join_sem);
+	}
 
 	/*
 	 * Get the next thread. While there isn't one, call md_idle().
@@ -862,13 +864,9 @@ thread_join(struct thread *thread, int *ret_out)
 	struct thread *t_tmp;
 	struct cpu *t_cpu;
 	struct proc *t_proc;
-	lock_acquire(&curcpu->cv_parents_lock);
-
+	
 	t_parent = thread->t_parent;
 	t_proc = thread->t_proc;
-
-	/* Interrupts off on this processor */
-	splhigh();
 	
 	// check if any thread argument is available (is thread joinable)
 	KASSERT(thread != NULL);
@@ -887,10 +885,8 @@ thread_join(struct thread *thread, int *ret_out)
 	//if (thread == cur)
 	//	return -1;
 
-	// check if thread's process is the same as the current one 
-	KASSERT(t_proc == cur->t_proc);   // do we need this here ?
-	//if (t_proc != curproc)
-	//	return -1;
+	// check if child semaphore is available
+	KASSERT(thread->t_join_sem != NULL);
 	
 	// distinguish between
 	// child has already exited (state = ZOMBIE_JOIN)
@@ -898,10 +894,12 @@ thread_join(struct thread *thread, int *ret_out)
 	
 	// wait until child thread is in S_ZOMBIE_JOIN state (triggered in thread_switch)
 	while(thread->t_state != S_ZOMBIE_JOIN){
-		if (thread->t_state == S_ZOMBIE)
-			return -1;
-		cv_wait(&curcpu->cv_parents, &curcpu->cv_parents_lock);
+		KASSERT(thread->t_state != S_ZOMBIE);
+		P(thread->t_join_sem);
 	}
+
+	// semaphore no longer needed
+	sem_destroy(thread->t_join_sem);
 	
 	*ret_out = thread->t_return;
 	t_cpu = thread->t_cpu;
@@ -953,11 +951,6 @@ thread_join(struct thread *thread, int *ret_out)
 	threadlist_addtail(&t_cpu->c_zombies, thread);
 	spinlock_release(&t_cpu->c_zombies_lock);
 
-	// trigger clean up on specific cpu (where thread waits)
-	// -> don't know how yet but I think the specific cpu should do that automatically 
-	//    if its getting active again
-
-	lock_release(&curcpu->cv_parents_lock);
 	return 0;
 }
 
