@@ -287,6 +287,8 @@ file      lib/misc.c
 file      lib/queue.c
 file      lib/time.c
 file      lib/uio.c
+file      lib/synch_queue.c
+file      lib/synch_heap.c
 
 defoption noasserts
 
