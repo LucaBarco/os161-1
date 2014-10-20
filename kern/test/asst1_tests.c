@@ -437,7 +437,7 @@ static int fail(const char *msg, unsigned long num)
 
     lock_release(testlock);
 
-    V(donesem);
+    V(donesem_locks);
     thread_exit(0);
 }
 
@@ -478,7 +478,7 @@ static int locktest_holder_helper_function(void *junk, unsigned long num){
 
 
 
-    V(donesem);
+    V(donesem_locks);
 
     return 0;
 }
@@ -489,6 +489,8 @@ static int locktest_holder_multiple()
 {
     
     int result;   
+
+    donesem_locks = sem_create("lock_sem",0);
     
     kprintf("Starting lock holder test  (multiple)...\n");
 
@@ -500,7 +502,7 @@ static int locktest_holder_multiple()
         }
     }
     for (int i=0; i<NTHREADS; i++) {
-        P(donesem);
+        P(donesem_locks);
     }
 
     kprintf("Lock holder test done. (multiple)\n");
