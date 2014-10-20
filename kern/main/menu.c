@@ -41,7 +41,6 @@
 #include <sfs.h>
 #include <syscall.h>
 #include <test.h>
-//#include "cust_locktest.h"
 #include "opt-sfs.h"
 #include "opt-net.h"
 
@@ -594,7 +593,6 @@ static struct {
 
 	/* synchronization assignment tests */
 	{ "sy2",	locktest },
-//	{ "sy21",	locktest_extended },
 	{ "sy3",	cvtest },
 	{ "a1a",	asst1_tests },
 
