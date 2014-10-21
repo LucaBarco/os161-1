@@ -157,6 +157,7 @@ thread_create(const char *name)
 
 	/* If you add to struct thread, be sure to initialize here */
 	thread->t_parent = NULL;
+thread->has_parent = false;
 	thread->t_childs_to_join = 0;
 	thread->t_return = 0;
 	thread->t_join_sem = NULL;
@@ -538,6 +539,7 @@ thread_fork(const char *name,
 		curthread->t_childs_to_join++;
 		// set parent thread
 		newthread->t_parent = curthread;
+newthread->has_parent=true;
 		// create semaphore
 		newthread->t_join_sem = sem_create(name, 0);
 	}
@@ -654,7 +656,7 @@ thread_switch(threadstate_t newstate, struct wchan *wc, struct spinlock *lk)
 
 	// added for ASST1
 	// wake waiting parents	
-	if (cur->t_parent != NULL) 
+	if (cur->has_parent && cur->t_state == S_ZOMBIE_JOIN) 
 	{
 		V(cur->t_join_sem);
 	}
@@ -848,7 +850,7 @@ thread_exit(int ret)
 
 	/* Interrupts off on this processor */
         splhigh();
-	if(cur->t_parent == NULL)
+	if(!cur->has_parent)
 		thread_switch(S_ZOMBIE, NULL, NULL);
 	else
 		thread_switch(S_ZOMBIE_JOIN, NULL, NULL);
@@ -893,10 +895,10 @@ thread_join(struct thread *thread, int *ret_out)
 	// child has not yet exited (state = any\{ZOMBIE}
 	
 	// wait until child thread is in S_ZOMBIE_JOIN state (triggered in thread_switch)
-	while(thread->t_state != S_ZOMBIE_JOIN){
-		KASSERT(thread->t_state != S_ZOMBIE);
+	//while(thread->t_state != S_ZOMBIE_JOIN){
+	//	KASSERT(thread->t_state != S_ZOMBIE);
 		P(thread->t_join_sem);
-	}
+	//}
 
 	// semaphore no longer needed
 	sem_destroy(thread->t_join_sem);
