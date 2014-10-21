@@ -118,7 +118,8 @@ runthreads(int doloud)
 	}
 }
 
-/* for thread_join tests */
+
+/**
 static
 int 
 go(void* p, unsigned long n)
@@ -148,6 +149,8 @@ runthreadjointest(void)
 
 	kprintf("Main thread done.\n");
 }
+
+**/
 
 /* ---------------------------------- */
 
@@ -180,7 +183,7 @@ threadtest2(int nargs, char **args)
 	return 0;
 }
 
-
+/**
 // thest for thread_join
 int
 threadtest4(int nargs, char **args)
@@ -194,3 +197,5 @@ threadtest4(int nargs, char **args)
 
     return 0;
 }
+
+**/
