@@ -83,7 +83,7 @@ static int thread_test_basic_join_helper(void *junk, unsigned long num){
 
    // thread_yield();
    
-    for(int i = 0; i< 100000; i++){
+    for(int i = 0; i< 100; i++){
      kprintf("test");
 
 
@@ -101,21 +101,21 @@ static int thread_test_basic_join_helper(void *junk, unsigned long num){
 static int thread_test_basic_join(){
 
     int result;
-    int *return_value;
+    int return_value;
 
     
     struct thread *temp_thread;
 	
     kprintf("starting thread");
 
-    result = thread_fork("simple_join", &temp_thread, NULL, thread_test_basic_join_helper, NULL, 1);
+    result = thread_fork("simple_join", &temp_thread, NULL, &thread_test_basic_join_helper, NULL, 1);
     if (result) {
         panic("thread_test_basic_join: thread_fork failed: %s\n",  strerror(result));
     }
 
     kprintf("thread forked");
-
-    thread_join(temp_thread, return_value);
+	kprintf(temp_thread->t_name);
+    thread_join(temp_thread, &return_value);
     kprintf("thread joined");
 
 
