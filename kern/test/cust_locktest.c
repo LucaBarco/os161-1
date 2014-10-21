@@ -81,7 +81,14 @@ static int thread_test_basic_join_helper(void *junk, unsigned long num){
 
     kprintf("I live and run!");
 
-    thread_yield();
+   // thread_yield();
+   
+    for(int i = 0; i< 100000; i++){
+     kprintf("test");
+
+
+    } 
+
 
     thread_counter++;
     
@@ -98,11 +105,15 @@ static int thread_test_basic_join(){
 
     
     struct thread *temp_thread;
+	
+    kprintf("starting thread");
 
     result = thread_fork("simple_join", &temp_thread, NULL, thread_test_basic_join_helper, NULL, 1);
     if (result) {
         panic("thread_test_basic_join: thread_fork failed: %s\n",  strerror(result));
     }
+
+    kprintf("thread forked");
 
     thread_join(temp_thread, return_value);
     kprintf("thread joined");
