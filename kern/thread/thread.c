@@ -658,7 +658,9 @@ thread_switch(threadstate_t newstate, struct wchan *wc, struct spinlock *lk)
 	// wake waiting parents	
 	if (cur->has_parent && cur->t_state == S_ZOMBIE_JOIN) 
 	{
+		spinlock_release(&curcpu->c_runqueue_lock);
 		V(cur->t_join_sem);
+		spinlock_acquire(&curcpu->c_runqueue_lock);
 	}
 
 	/*
