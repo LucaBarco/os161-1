@@ -287,6 +287,8 @@ file      lib/misc.c
 file      lib/queue.c
 file      lib/time.c
 file      lib/uio.c
+file      lib/synch_queue.c
+file      lib/synch_heap.c
 
 defoption noasserts
 
@@ -440,8 +442,9 @@ file		test/heaptest.c
 file		test/threadlisttest.c
 file		test/threadtest.c
 file		test/tt3.c
-file		test/cust_locktest.c
+#file		test/cust_locktest.c
 file		test/synchtest.c
+file		test/asst1_tests.c
 file		test/malloctest.c
 file		test/fstest.c
 optfile net	test/nettest.c

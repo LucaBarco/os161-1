@@ -41,7 +41,6 @@
 #include <sfs.h>
 #include <syscall.h>
 #include <test.h>
-#include "cust_locktest.h"
 #include "opt-sfs.h"
 #include "opt-net.h"
 
@@ -490,6 +489,7 @@ static const char *testmenu[] = {
 	"[sy1] Semaphore test                ",
 	"[sy2] Lock test             (1)     ",
 	"[sy3] CV test               (1)     ",
+	"[a1a] Assignment 1 tests    (3ish)  ",
 	"[fs1] Filesystem test               ",
 	"[fs2] FS read stress                ",
 	"[fs3] FS write stress               ",
@@ -595,8 +595,8 @@ static struct {
 
 	/* synchronization assignment tests */
 	{ "sy2",	locktest },
-	{ "sy21",	locktest_extended },
 	{ "sy3",	cvtest },
+	{ "a1a",	asst1_tests },
 
 	/* file system assignment tests */
 	{ "fs1",	fstest },
