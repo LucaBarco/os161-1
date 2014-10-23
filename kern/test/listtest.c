@@ -133,6 +133,20 @@ listtest(int nargs, char **args)
     KASSERT(list_isempty(newlist));
     list_assertvalid(newlist);
 
+    /* test for bug -- incorrect behavior when removing from end of list */
+    for (i = 0; i < TESTSIZE; ++i) {
+        elem = (int*)kmalloc(sizeof(int));
+        KASSERT(elem != NULL);
+        *elem = i;
+        /* check for ENOMEM */
+        KASSERT(list_push_back(newlist, (void*) elem) == 0);
+    }
+    KASSERT(list_getsize(newlist) == TESTSIZE);
+    KASSERT(!list_isempty(newlist));
+    i = TESTSIZE - 1;
+    list_remove(newlist, &i, &int_comparator);
+    list_assertvalid(newlist);
+
     /* destroys the list */
     list_destroy(newlist);
 
