@@ -4,6 +4,10 @@ kern/compile/
 tags
 TAGS
 
+.DS_Store
+pull.sh
+push.sh
+
 sys161.conf
 LHD0.img
 LHD1.img
