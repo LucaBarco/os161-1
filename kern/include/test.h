@@ -65,6 +65,7 @@ int sqtest_wait(int, char**);
 int shtest_order(int, char**);
 int shtest_wait(int, char**);
 int asst1_tests(int, char**);
+int asst2_tests(int, char**);
 
 /* filesystem tests */
 int fstest(int, char **);

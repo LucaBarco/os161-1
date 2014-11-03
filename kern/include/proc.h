@@ -56,6 +56,9 @@ struct proc {
 	/* VFS */
 	struct vnode *p_cwd;		/* current working directory */
 
+    /* PID */
+    int PID;                    /* the process ID of the current process */
+
 	/* add more material here as needed */
 };
 
