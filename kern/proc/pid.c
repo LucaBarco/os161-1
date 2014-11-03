@@ -70,7 +70,11 @@ void release_process_id(int i){
 
 
 // initializes the PID system 
+<<<<<<< HEAD
 void pid_bootstrap(){
+=======
+void bootstrap_pid(){
+>>>>>>> 457c67a28cb19cd755dd18b2ed289d4f7fd1919b
 
     // intialize the queue
     PID_queue = queue_create();

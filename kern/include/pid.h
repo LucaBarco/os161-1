@@ -14,7 +14,11 @@ int get_new_process_id(void);
 void release_process_id(int i);
 
 // initializes the PID system 
+<<<<<<< HEAD
 void pid_bootstrap(void);
+=======
+void bootstrap_pid(void);
+>>>>>>> 457c67a28cb19cd755dd18b2ed289d4f7fd1919b
 
 
 #endif

@@ -9,11 +9,15 @@
 #include <test.h>
 #include <pid.h>
 #include <asst2_tests.h>
+<<<<<<< HEAD
 #include <limits.h>
+=======
+>>>>>>> 457c67a28cb19cd755dd18b2ed289d4f7fd1919b
 
 
 
 /* PID tests */
+<<<<<<< HEAD
 
 // do an initial test: acquire - release - acquire
 int test_minimal_acquire_release_acquire_counter(){
@@ -66,10 +70,17 @@ int test_pid_upper_limit_counter(){
     }
 
     kprintf("\n****** done testing PID upper limit *******\n");
+=======
+int test_pid_upper_limit(){
+    // what is the current PID counter, probably 2
+
+    kprintf("\n %d \n", PID_counter);
+>>>>>>> 457c67a28cb19cd755dd18b2ed289d4f7fd1919b
 
     return 0;
 }
 
+<<<<<<< HEAD
 // test release of pids
 int test_pid_release(){
     kprintf("\n****** testing PID release *******\n");
@@ -145,6 +156,8 @@ void release_ids(int from, int to){
         release_process_id(i);
     }
 }
+=======
+>>>>>>> 457c67a28cb19cd755dd18b2ed289d4f7fd1919b
 
 
 
@@ -152,6 +165,7 @@ int asst2_tests(int nargs, char **args){
     (void) nargs;
     (void) args;
 
+<<<<<<< HEAD
     kprintf("starting tests for PID");
     // DO NOT CHANGE THE ORDER HERE!
     KASSERT(test_minimal_acquire_release_acquire_counter() == 0);
@@ -159,6 +173,9 @@ int asst2_tests(int nargs, char **args){
     KASSERT(test_pid_release() == 0);    
     KASSERT(test_minimal_acquire_release_acquire_queue() == 0);
     release_ids(10000,30000);
+=======
+    kprintf("test");
+>>>>>>> 457c67a28cb19cd755dd18b2ed289d4f7fd1919b
 
     return 0;
 }
