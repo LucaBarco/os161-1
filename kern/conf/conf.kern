@@ -336,7 +336,9 @@ file      thread/threadlist.c
 # Process system
 #
 
+file      proc/pid.c
 file      proc/proc.c
+
 
 #
 # Virtual memory system
@@ -444,7 +446,8 @@ file		test/threadtest.c
 file		test/tt3.c
 #file		test/cust_locktest.c
 file		test/synchtest.c
-file		test/asst1_tests.c
+file        test/asst1_tests.c
+file		test/asst2_tests.c
 file		test/malloctest.c
 file		test/fstest.c
 optfile net	test/nettest.c
