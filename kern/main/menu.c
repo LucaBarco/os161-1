@@ -597,6 +597,7 @@ static struct {
 	{ "sy2",	locktest },
 	{ "sy3",	cvtest },
 	{ "a1a",	asst1_tests },
+	{ "a2a",	asst2_tests },
 
 	/* file system assignment tests */
 	{ "fs1",	fstest },
