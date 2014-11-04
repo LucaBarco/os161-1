@@ -149,8 +149,6 @@ void release_ids(int from, int to){
 
 
 
-
-
 int asst2_tests(int nargs, char **args){
     (void) nargs;
     (void) args;
@@ -161,6 +159,9 @@ int asst2_tests(int nargs, char **args){
     KASSERT(test_pid_upper_limit_counter() == 0);
     KASSERT(test_pid_release() == 0);    
     KASSERT(test_minimal_acquire_release_acquire_queue() == 0);
+
+    
+
     release_ids(10000,30000);
 
     return 0;

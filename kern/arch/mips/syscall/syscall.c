@@ -114,6 +114,10 @@ syscall(struct trapframe *tf)
 			    (char**)tf->tf_a1);
 		break;
 
+	    case SYS_getpid:
+		err = sys_getpid((userptr_t)tf->tf_a0);
+		break;
+
 	    /* Add stuff here */
 
 	    default:
