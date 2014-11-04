@@ -539,9 +539,16 @@ thread_fork(const char *name,
 		curthread->t_childs_to_join++;
 		// set parent thread
 		newthread->t_parent = curthread;
-newthread->has_parent=true;
+		newthread->has_parent=true;
 		// create semaphore
 		newthread->t_join_sem = sem_create(name, 0);
+
+		// destroy thread if create semaphore did not work
+		if (newthread->t_join_sem == NULL) {
+			/* thread_destroy will clean up the stack */
+			thread_destroy(newthread);
+			return -1;
+		}
 	}
 	
 

@@ -35,6 +35,7 @@
 #include <thread.h>
 #include <current.h>
 #include <syscall.h>
+#include <limits.h>
 
 
 /*
@@ -159,3 +160,128 @@ enter_forked_process(struct trapframe *tf)
 {
 	(void)tf;
 }
+
+
+/*
+--- fork
+From the syscall() function we get the parent trap frame as argument.
+We try to do as much tests as possible at the start of fork() so that we can fail early if necessary.
+Check if there are already too many processes on the system
+x	if yes -> error: ENPROC & return -1
+Check if current user already has too many processes
+x	if yes -> error: EMPROC & return -1
+Allocate new pid (getpid()) and assign it to new child process
+
+Create trapframe for child and copy all values of the parret trapframe
+
+Create new address space and copy the content from parent address space to child address space (as_copy(parent_as, child_as) ) (this should copy the memory content from the parent to the child space)
+Create a new process skeleton (proc_create_runprogram(name)), whereas name is given by the parent name + “_child”.
+ E.g. parent name = “parent” -> child name = “parent_child”
+Create child process thread
+Add parent information to the child process thread (initialises the semaphore for the waitpid mechanism)
+Create file descriptor table for child process and copy content of parent file descriptor table into it.
+Create open file table for child and copy content of parent open file handle table into it. Remove files from the child open file table that are opened as writable in the parent list. 
+Check if sufficient virtual memory for the new process was available (that means check if all create operations succeed)
+if not -> error: ENOMEM + return -1 + cleanup
+Add child process to child_process_list of parent process
+Set parent variable in child to current parent
+Modify return value of child trapframe to 0 (trapframe->v0 = 0)
+Modify return value of parent to the child pid (trapframe->v0 = child pid)
+return (if no error occured)
+*/
+int
+fork (void){
+	int pid = 0;
+	// check if there are already too many processes on the system
+	if(false)// TODO
+	{
+		return ENPROC;
+	}
+
+	// check if current user already has too many processes
+	if(false)// TODO
+	{
+		return EMPROC;
+	}
+
+	// allocate pid
+	
+	// check if generated pid is valid
+	if(pid < PID_MIN || pid > PID_MAX)
+	{
+		return -1; // TODO generate error code for this case
+	}
+
+
+
+
+	return 0;
+}
+
+/*
+--- waitpid
+chek if pid argument named a nonexistent process
+x	if yes -> error: ESRCH & return -1
+Check if pid argument named a process that was not a child of the current process (check child_pid_list of parent)
+x	if yes -> error: ECHILD & return -1
+x	Check if status argument is an invalid pointer (status == NULL)
+x	if yes -> error: EFAULT & return -1
+x	Check if options argument requested invalid or unsupported options (options != 0)
+x	if yes -> error: EINVAL & return -1
+
+The parent wants to decrement the semaphore of the child process thread. The child process thread increments the semaphore if it exits. If the child has not finished (exit) yet, the parent will wait until the child exits. If the child already finished, parent don’t has to wait.
+After a successfully wait (child process exits and parent process is up again and grabbed the return value of the child which is saved in the childs process struct)
+Clean up child process ressources (free allocated space and pid)
+Return child pid
+*/
+int
+waitpid(int pid, int *status, int options) {
+	// chek if pid argument named a nonexistent process
+	if(false)// TODO
+	{
+		return ESRCH;
+	}
+
+	// check if pid argument named a process that was not a child of the current process
+	if(false)// TODO
+	{
+		return ECHILD;
+	}
+
+	// check if status is invalid
+	if(status == NULL)
+	{
+		return EFAULT;
+	}
+
+	// check if option argument is valid
+	if( status != 0)
+	{
+		return EINVAL;
+	}
+
+	return 0;
+}
+
+/*
+--- exit
+Does process has child processes? (!empty(child_process_list))
+if yes:
+destroy all semaphores from the childs process threads (we don’t need them anymore)
+set variable parent from all its childs structs to NULL
+Clean up process ressources (free allocated space and pid) of all its child processes that are waiting that parent “joins”. Here we can also use the thread join mechanism again. The system call triggers the kernel to change the state of the waiting child process threads such that the cpu can cleanup the ressources.
+Check if process has parent (parent != NULL)
+if yes:
+store exitcode in process struct (returnvalue = exitcode)
+increment thread semaphore to maybe wake up the parent
+process structure remains until parent “joins” or until it gets cleaned up
+if no:
+Clean up process ressources (free allocated space and pid)
+*/
+void _exit(int exitcode) {
+	return;
+}
+
+
+
+

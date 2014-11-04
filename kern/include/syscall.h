@@ -51,10 +51,16 @@ void enter_forked_process(struct trapframe *tf);
 __DEAD void enter_new_process(int argc, userptr_t argv, userptr_t env,
 		       vaddr_t stackptr, vaddr_t entrypoint);
 
+int fork(void);
+int waitpid(int pid, int *status, int options);
+void _exit(int exitcode);
+
 
 /*
  * Prototypes for IN-KERNEL entry points for system call implementations.
  */
+
+
 
 int sys_reboot(int code);
 int sys___time(userptr_t user_seconds, userptr_t user_nanoseconds);
