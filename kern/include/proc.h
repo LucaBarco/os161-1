@@ -39,6 +39,7 @@
 #include <spinlock.h>
 #include <thread.h> /* required for struct threadarray */
 #include <proclist.h>
+#include <synch.h>
 
 struct addrspace;
 struct vnode;
@@ -62,8 +63,8 @@ struct proc {
 
 	/* add more material here as needed */
 	/* ASST2 */
-	struct proclistnode p_listnode; /* list with all child processes */
-	//struct lock p_child_process_list_lock; /* lock for child process list */
+	struct proclist p_childlist; /* list with all child processes */
+	struct lock p_childlist_lock; /* lock for child process list */
 	struct proc* p_parent;		/* parent process if not exists NULL */
 	int p_returnvalue;		/* in case of waitpid to store return value */
 
