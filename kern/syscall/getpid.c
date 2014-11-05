@@ -1,27 +1,19 @@
 #include <types.h>
-#include <kern/errno.h>
-#include <kern/syscall.h>
-#include <lib.h>
-#include <mips/trapframe.h>
-#include <thread.h>
-#include <proc.h>
+#include <clock.h>
+#include <copyinout.h>
 #include <current.h>
 #include <syscall.h>
 
 
 
-int sys_getpid(userptr_t pid){
+int sys_getpid(){
 
 
     // just return the current thread's process' pid
     int cur_pid = curthread->proc.pid;
 
-    int result = copyout(&cur_pid, pid, sizeof(int));
+    int result = cur_pid;
 
-    if(result){
-        return result;
-    }
-
-    return 0;
+    return result;
 
 }
