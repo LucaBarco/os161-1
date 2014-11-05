@@ -2,18 +2,19 @@
 #include <clock.h>
 #include <copyinout.h>
 #include <current.h>
+#include <proc.h>
 #include <syscall.h>
 
 
 
-int sys_getpid(){
+int32_t sys_getpid(){
 
+
+    // TODO error handling!
 
     // just return the current thread's process' pid
-    int cur_pid = curthread->proc.pid;
+    struct proc *parent_proc =  curthread->t_proc;
+    int32_t cur_pid = (int32_t) parent_proc->PID;
 
-    int result = cur_pid;
-
-    return result;
-
+    return cur_pid;
 }
