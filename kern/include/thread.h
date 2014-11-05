@@ -62,7 +62,6 @@ typedef enum {
 	S_READY,	/* ready to run */
 	S_SLEEP,	/* sleeping */
 	S_ZOMBIE,	/* zombie; exited but not yet deleted */
-	S_ZOMBIE_JOIN,	/* zombie; exited but not yet deleted and waiting to be joined*/
 } threadstate_t;
 
 /* Thread structure. */
@@ -110,7 +109,8 @@ struct thread {
 	bool has_parent;
 	int t_childs_to_join;
 	int t_return;
-	struct semaphore *t_join_sem;
+	struct semaphore *t_join_sem_child;
+	struct semaphore *t_join_sem_parent;
 	/* add more here as needed */
 };
 

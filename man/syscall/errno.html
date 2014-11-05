@@ -99,7 +99,7 @@ You may add more at your pleasure; but be sure to read the notes in
 the file <tt>kern/errno.h</tt> that defines them.
 
 <table width=90%>
-<tr><td width=5% rowspan=63>&nbsp;</td>
+<tr><td width=5% rowspan=64>&nbsp;</td>
     <td width=10% valign=top>ENOSYS</td>
 <td><b>Function not implemented</b>: the action requested required
 	functionality not yet implemented. This is also the error
@@ -425,6 +425,11 @@ the file <tt>kern/errno.h</tt> that defines them.
 <td><b>Threads operation not supported</b>: a special error code
 	defined by the POSIX threads standard, which is a "special"
 	interface.</td></tr>
+
+<tr><td valign=top>EPIDOOR</td>
+<td><b>Generated pid out of range</b>: the generated process id is not 
+	in the allowed range.</td></tr>
+
 
 </table>
 </p>

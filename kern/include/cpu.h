@@ -77,8 +77,6 @@ struct cpu {
 	 * Accessed only by this cpu.
 	 * to store threads that are zombies but joinable and waiting to be joined
 	 */
-	struct threadlist c_zombies_join;	/* Run queue for this cpu */
-	struct spinlock c_zombies_join_lock;
 
 	/*
 	 * Accessed by other cpus.

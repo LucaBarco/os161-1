@@ -83,6 +83,10 @@ proc_create(const char *name)
 	/* VFS fields */
 	proc->p_cwd = NULL;
 
+	/* Process ID */
+	proc->PID = get_new_process_id();
+
+
 	return proc;
 }
 
@@ -169,6 +173,8 @@ proc_destroy(struct proc *proc)
 	threadarray_cleanup(&proc->p_threads);
 	spinlock_cleanup(&proc->p_lock);
 
+	release_process_id(proc->PID);
+
 	kfree(proc->p_name);
 	kfree(proc);
 }
@@ -214,6 +220,9 @@ proc_create_runprogram(const char *name)
 		proc->p_cwd = curproc->p_cwd;
 	}
 	spinlock_release(&curproc->p_lock);
+
+	/* Process ID */
+	proc->PID = get_new_process_id();
 
 	return proc;
 }

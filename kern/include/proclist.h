@@ -51,51 +51,51 @@ struct proc;	/* from <proc.h> */
  */
 
 struct proclistnode {
-	struct proclistnode *tln_prev;
-	struct proclistnode *tln_next;
-	struct proc *tln_self;
+	struct proclistnode *pln_prev;
+	struct proclistnode *pln_next;
+	struct proc *pln_self;
 };
 
 struct proclist {
-	struct proclistnode tl_head;
-	struct proclistnode tl_tail;
-	unsigned tl_count;
+	struct proclistnode pl_head;
+	struct proclistnode pl_tail;
+	unsigned pl_count;
 };
 
 /* Initialize and clean up a process list node. */
-void proclistnode_init(struct proclistnode *tln, struct proc *self);
-void proclistnode_cleanup(struct proclistnode *tln);
+void proclistnode_init(struct proclistnode *pln, struct proc *self);
+void proclistnode_cleanup(struct proclistnode *pln);
 
 /* Initialize and clean up a process list. Must be empty at cleanup. */
-void proclist_init(struct proclist *tl);
-void proclist_cleanup(struct proclist *tl);
+void proclist_init(struct proclist *pl);
+void proclist_cleanup(struct proclist *pl);
 
 /* Check if it's empty */
-bool proclist_isempty(struct proclist *tl);
+bool proclist_isempty(struct proclist *pl);
 
 /* Add and remove: at ends */
-void proclist_addhead(struct proclist *tl, struct proc *t);
-void proclist_addtail(struct proclist *tl, struct proc *t);
-struct thread *threadlist_remhead(struct proclist *tl);
-struct thread *threadlist_remtail(struct proclist *tl);
+void proclist_addhead(struct proclist *pl, struct proc *p);
+void proclist_addtail(struct proclist *pl, struct proc *p);
+struct proc *proclist_remhead(struct proclist *pl);
+struct proc *proclist_remtail(struct proclist *pl);
 
-/* Add and remove: in middle. (TL is needed to maintain ->tl_count.) */
-void proclist_insertafter(struct proclist *tl,
+/* Add and remove: in middle. (TL is needed to maintain ->pl_count.) */
+void proclist_insertafter(struct proclist *pl,
 			    struct proc *onlist, struct proc *addee);
-void proclist_insertbefore(struct proclist *tl,
+void proclist_insertbefore(struct proclist *pl,
 			     struct proc *addee, struct proc *onlist);
-void proclist_remove(struct proclist *tl, struct proc *t);
+void proclist_remove(struct proclist *pl, struct proc *p);
 
-/* Iteration; itervar should previously be declared as (struct thread *) */
-#define PROCLIST_FORALL(itervar, tl) \
-	for ((itervar) = (tl).tl_head.tln_next->tln_self; \
+/* Iteration; itervar should previously be declared as (struct proc *) */
+#define PROCLIST_FORALL(itervar, pl) \
+	for ((itervar) = (pl).pl_head.pln_next->pln_self; \
 	     (itervar) != NULL; \
-	     (itervar) = (itervar)->t_listnode.tln_next->tln_self)
+	     (itervar) = (itervar)->p_listnode.pln_next->pln_self)
 
-#define PROCLIST_FORALL_REV(itervar, tl) \
-	for ((itervar) = (tl).tl_tail.tln_prev->tln_self; \
+#define PROCLIST_FORALL_REV(itervar, pl) \
+	for ((itervar) = (pl).pl_tail.pln_prev->pln_self; \
 	     (itervar) != NULL; \
-	     (itervar) = (itervar)->t_listnode.tln_prev->tln_self)
+	     (itervar) = (itervar)->p_listnode.pln_prev->pln_self)
 
 
 #endif /* _PROCLIST_H_ */
