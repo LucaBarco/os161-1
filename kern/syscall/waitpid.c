@@ -3,11 +3,10 @@
 #include <kern/syscall.h>
 #include <lib.h>
 #include <mips/trapframe.h>
-#include <thread.h>
 #include <proc.h>
 #include <current.h>
 #include <syscall.h>
-
+#include <thread.h>
 
 /*
 --- waitpid

@@ -36,7 +36,20 @@
  *                          the head.
  */
 
-struct list;  /* Opaque. */
+//struct list;  /* Opaque. */
+struct listnode {
+    int datatype;
+    void* val;
+    struct listnode* next;
+};
+
+struct list {
+    int datatype;
+    struct listnode* head;
+    struct listnode* tail;
+    unsigned int size;
+};
+
 
 struct list* list_create(void);
 int list_push_back(struct list* lst, void* newval);

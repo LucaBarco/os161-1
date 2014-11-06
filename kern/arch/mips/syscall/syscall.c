@@ -38,6 +38,22 @@
 #include <limits.h>
 
 
+//#include <syscall.h>
+//#include <types.h>
+
+//#include <thread.h>
+//#include <kern/errno.h>
+//#include <kern/syscall.h>
+//#include <lib.h>
+
+//#include <mips/trapframe.h>
+
+//#include <current.h>
+
+//#include <limits.h>
+
+
+
 /*
  * System call dispatcher.
  *
@@ -116,10 +132,13 @@ syscall(struct trapframe *tf)
 		break;
 
 	    case SYS_getpid:
-		//err = sys_getpid((userptr_t)tf->tf_a0);
+		err = sys_getpid((userptr_t)tf->tf_a0);
 		break;
 
 	    /* Add stuff here */
+	    case SYS_fork:
+		err = sys_fork(tf, &retval);
+		break;
 
 	    default:
 		kprintf("Unknown syscall %d\n", callno);
@@ -156,6 +175,7 @@ syscall(struct trapframe *tf)
 	KASSERT(curthread->t_iplhigh_count == 0);
 }
 
+
 /*
  * Enter user mode for a newly forked process.
  *
@@ -164,10 +184,10 @@ syscall(struct trapframe *tf)
  *
  * Thus, you can trash it and do things another way if you prefer.
  */
+/*
 void
 enter_forked_process(struct trapframe *tf)
 {
-	(void)tf;
+	(void*)tf;
 }
-
-
+*/

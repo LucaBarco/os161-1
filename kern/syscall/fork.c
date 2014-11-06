@@ -1,14 +1,71 @@
+//#include <kern/errno.h>
+//#include <kern/syscall.h>
+//#include <types.h>
+//#include <machine/trapframe.h>
+//#include <pid.h>
+
+//#include <thread.h>
+//#include <proc.h>
+//#include <current.h>
+//#include <addrspace.h>
+//#include <syscall.h>
+//#include <vnode.h>
+
+//#include <kern/errno.h>
+//#include <kern/syscall.h>
+//#include <lib.h>
+//#include <limits.h>
+
+
 #include <types.h>
 #include <kern/errno.h>
-#include <kern/syscall.h>
+#include <kern/fcntl.h>
 #include <lib.h>
 #include <limits.h>
-#include <mips/trapframe.h>
-#include <thread.h>
 #include <proc.h>
 #include <current.h>
+#include <addrspace.h>
+
 #include <syscall.h>
-#include <pid.h>
+#include <mips/trapframe.h>
+
+
+
+/*
+ * Enter user mode for a newly forked process.
+ *
+ * This function is provided as a reminder. You need to write
+ * both it and the code that calls it.
+ *
+ * Thus, you can trash it and do things another way if you prefer.
+ */
+static int enter_forked_process(void *tf,  unsigned long n)
+{
+	(void)n;
+	
+	// copy trapframe
+	struct trapframe trapf = (*((struct trapframe *) tf));// = *((struct trapframe*)tf);
+	//trapf = kmalloc(sizeof(struct trapframe));
+	//memcpy(trapf, tf, sizeof(struct trapframe));
+
+	// Set the trapframe values
+	// set returnvalue 0
+	trapf.tf_v0 = 0;
+	// signal no error
+	trapf.tf_a3 = 0;
+	// increase pc such that systemcall is not called again
+	trapf.tf_epc += 4;
+
+	// free allocated memory
+	kfree(tf);
+
+	// change back to usermode
+	mips_usermode(&trapf);
+
+	// Panic if user mode returns // should not happen
+	panic("Returned from user mode!");
+	return -1;
+}
 
 
 /*
@@ -38,13 +95,14 @@ Modify return value of parent to the child pid (trapframe->v0 = child pid)
 return (if no error occured)
 */
 
-int sys_fork(void){
+int sys_fork(struct trapframe *tf, int32_t *ret){
 	int new_pid = 0;
 	struct addrspace *new_as = NULL;
 	struct proc* new_proc = NULL;
 	struct thread* new_thread = NULL;
 	struct thread* curt = curthread;
-	struct proc curp = curt->t_proc;
+	struct proc* curp = curt->t_proc;
+	struct trapframe *trapf;
 	char name[16];
 	int result;
 	
@@ -62,13 +120,13 @@ int sys_fork(void){
 	}
 
 	// generate process name
-      	result = sprintf(name, "child_%d", new_pid); 
+      	result = snprintf(name, sizeof(name), "child_%d", new_pid);
 	if (result < 0 ) {
 		return result; 
 	}
 
 	// create child process
-	new_proc = proc_create_runprogram(name)
+	new_proc = proc_create_runprogram(name);
 	if (new_proc == NULL) {
 		return -1; 
 	}
@@ -83,6 +141,8 @@ int sys_fork(void){
 	}
 	*/
 	
+	memcpy(ret, &new_pid, sizeof(int));
+
 	/* Create a new address space and copy content of current process in it. */
 	result = as_copy(curp->p_addrspace, &new_as);
 	if (result || new_as == NULL) {
@@ -91,63 +151,16 @@ int sys_fork(void){
 	}
 	new_proc->p_addrspace = new_as;
 
-	// create new thread
-	new_thread = thread_create(name);
-	if (new_thread == NULL) {
-		proc_destroy(new_proc);
-		//return -1;
-		return ENOMEM;
-	}	
+	// Copy the trapframe to the heap so it's available to the child
+	trapf = kmalloc(sizeof(tf));
+	memcpy(tf,trapf,sizeof(tf));
 
-	// attach new thread to new process
-	result = proc_addthread(new_proc, new_thread);
+	result = thread_fork(name, &new_thread, curp, &enter_forked_process, NULL, 0);
 	if (result) {
-		thread_destroy(new_thread)
+		kfree(trapf);
 		proc_destroy(new_proc);
-		return -1;
+		return result; 
 	}
-
-	/* Allocate a stack */
-	newthread->t_stack = kmalloc(STACK_SIZE);
-	if (newthread->t_stack == NULL) {
-		proc_remthread(new_thread);
-		thread_destroy(new_thread);
-		proc_destroy(new_proc);
-		return ENOMEM;
-	}
-	thread_checkstack_init(new_thread);
-	// TODO copz stack
-
-	// increase number of childs to join
-	curt->t_childs_to_join++;
-
-	// create semaphore
-	new_thread->t_join_sem_parent = sem_create(name, 0);
-
-	// destroy thread if create semaphore did not work
-	if (new_thread->t_join_sem_parent == NULL) {
-		proc_remthread(new_thread);
-		thread_destroy(new_thread);
-		proc_destroy(new_proc);
-		return -1;
-	}
-
-
-	new_thread->t_join_sem_child = sem_create(name, 0);
-
-	// destroy thread if create semaphore did not work
-	if (new_thread->t_join_sem_child == NULL) {
-		proc_remthread(new_thread);
-		thread_destroy(new_thread);
-		proc_destroy(new_proc);
-		sem_destroy(new_thread->t_join_sem_parent);
-		return -1;
-	}
-	
-
-
-	/* Process subsystem fields */
-	new_proc->p_parent = curp;
 
 	spinlock_acquire(&curp->p_lock);
 	/* we don't need to lock proc->p_lock as we have the only reference */
@@ -157,44 +170,8 @@ int sys_fork(void){
 	}
 	spinlock_release(&curp->p_lock);
 
-
 	/* Thread subsystem fields */
-	proclist_addtail(curp->p_childlist, new_proc);
-	new_thread->t_in_interrupt = curt->t_in_interrupt;	/* Are we in an interrupt? */
-	new_thread->t_curspl = curt->t_curspl;			/* Current spl*() state */
-	new_thread->t_iplhigh_count = curt->t_iplhigh_count;
-	// set parent thread
-	new_thread->t_parent = curt;
-	new_thread->has_parent = true;
-	new_thread->t_cpu = curt->t_cpu;
-	new_thread->t_proc = curt->t_proc;
-
+	list_push_back(&curp->p_childlist, (void*)new_proc);
 	
-
-//----------------  // TODO how to copy
-	const char *t_wchan_name;	/* Name of wait channel, if sleeping */
-	threadstate_t t_state;		/* State this thread is in */
-
-	/*
-	 * Thread subsystem internal fields.
-	 */
-	struct thread_machdep t_machdep; /* Any machine-dependent goo */
-	struct threadlistnode t_listnode; /* Link for run/sleep/zombie lists */
-	void *t_stack;			/* Kernel-level stack */
-	struct switchframe *t_context;	/* Saved register context (on stack) */
-
-//------------- // TODO how to copy
-
-	/* Set up the switchframe so entrypoint() gets called */
-	switchframe_init(new_thread, entrypoint, data1, data2);
-
-	/* Lock the current cpu's run queue and make the new thread runnable */
-	thread_make_runnable(new_thread, false);
-
 	return 0;
-//-----------
-
-
-	
-	return -1;
 }

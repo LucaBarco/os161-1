@@ -50,6 +50,7 @@
 #include <vnode.h>
 #include <pid.h>
 
+
 /*
  * The process for the kernel; this holds all the kernel-only threads.
  */
@@ -87,7 +88,9 @@ proc_create(const char *name)
 	proc->PID = get_new_process_id();
 
 	/* Child list */
-	proclist_init(proc->p_childlist);
+	//proclist_init(&proc->p_childlist);
+	proc->p_childlist = *list_create();
+
 	proc->p_parent = NULL;
 	proc->p_returnvalue = 0;
 	proc->p_childlist_lock = *lock_create(name);
@@ -181,7 +184,8 @@ proc_destroy(struct proc *proc)
 	release_process_id(proc->PID);
 
 	/* Child list */
-	proclist_cleanup(proc->p_childlist);
+	//proclist_cleanup(&proc->p_childlist);
+	list_destroy(&proc->p_childlist);
 	lock_destroy(&proc->p_childlist_lock);
 
 	kfree(proc->p_name);

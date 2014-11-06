@@ -26,6 +26,7 @@ if no:
 Clean up process ressources (free allocated space and pid)
 */
 void sys_exit(int exitcode) {
+	int tmp = exitcode;
 	return;
 }
 

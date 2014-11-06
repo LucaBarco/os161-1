@@ -36,11 +36,16 @@
  * Note: curproc is defined by <current.h>.
  */
 
+
+#include <types.h>
+#include <kern/errno.h>
+#include <lib.h>
 #include <spinlock.h>
 #include <thread.h> /* required for struct threadarray */
-#include <proclist.h>
 #include <synch.h>
-
+#include <list.h>
+#include <addrspace.h>
+#include <vnode.h>
 struct addrspace;
 struct vnode;
 
@@ -63,7 +68,7 @@ struct proc {
 
 	/* add more material here as needed */
 	/* ASST2 */
-	struct proclist p_childlist; /* list with all child processes */
+	struct list p_childlist; /* list with all child processes */
 	struct lock p_childlist_lock; /* lock for child process list */
 	struct proc* p_parent;		/* parent process if not exists NULL */
 	int p_returnvalue;		/* in case of waitpid to store return value */
