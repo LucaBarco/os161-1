@@ -384,6 +384,8 @@ file      syscall/runprogram.c
 file      syscall/time_syscalls.c
 file      syscall/execv.c
 file      syscall/fork.c
+file      syscall/getpid.c
+
 
 #
 # Startup and initialization

@@ -61,7 +61,7 @@ int sys_fork(struct trapframe *tf, int32_t *ret);
 int sys_waitpid(int pid, int *status, int options);
 void sys_exit(int exitcode);
 
-int sys_getpid(userptr_t pid);
+int32_t sys_getpid(void);
 int sys_reboot(int code);
 int sys___time(userptr_t user_seconds, userptr_t user_nanoseconds);
 int execv(const char *progam, char **args);
