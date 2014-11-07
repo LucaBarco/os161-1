@@ -104,6 +104,7 @@ const char *const sys_errlist[] = {
 	"Connection reset by peer",   /* ECONNRESET */
 	"Message too large",          /* EMSGSIZE */
 	"Threads operation not supported",/* ENOTSUP */
+	"Generated pid out of range", /* EPIDOOR */
 };
 
 /*

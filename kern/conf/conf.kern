@@ -339,7 +339,6 @@ file      thread/threadlist.c
 file      proc/pid.c
 file      proc/proc.c
 
-
 #
 # Virtual memory system
 # (you will probably want to add stuff here while doing the VM assignment)
@@ -384,7 +383,9 @@ file      syscall/loadelf.c
 file      syscall/runprogram.c
 file      syscall/time_syscalls.c
 file      syscall/execv.c
+file      syscall/fork.c
 file      syscall/getpid.c
+
 
 #
 # Startup and initialization
