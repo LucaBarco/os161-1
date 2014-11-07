@@ -21,4 +21,10 @@ int test_fd_create_destroy(void);
 
 
 
+
+
+
+int test_synch_hashtable(void);
+
+
 #endif
