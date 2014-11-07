@@ -5,6 +5,7 @@
 #include <synch.h>
 #include <synch_queue.h>
 #include <synch_heap.h>
+#include <synch_hashtable.h>
 #include <wchan.h>
 #include <test.h>
 #include <pid.h>
@@ -149,6 +150,50 @@ void release_ids(int from, int to){
 
 
 
+
+
+// rudimentary test synch hashtable
+int test_synch_hashtable(){
+
+    kprintf("\n****** testing synch hashmap *******\n");
+
+    struct synch_hashtable *ht;
+
+    ht = synch_hashtable_create();
+
+    int val = 26;
+
+    char key3[] = "felix";
+
+    kprintf("test add \n");
+    synch_hashtable_add(ht, key3, 5, &val);
+
+    kprintf("test find \n");
+    int res = *(int*)synch_hashtable_find(ht, key3, 5);
+    kprintf("result %d \n", res);
+
+    kprintf("test empty \n");
+    KASSERT(synch_hashtable_isempty(ht) == 0);
+
+    kprintf("test size \n");
+    KASSERT(synch_hashtable_getsize(ht)==1);
+
+
+    kprintf("test remove \n");
+    synch_hashtable_remove(ht, key3, 5);
+
+    KASSERT(synch_hashtable_isempty(ht) == 1);
+
+
+    synch_hashtable_destroy(ht);
+
+    kprintf("\n****** done testing synch hashmap *******\n");
+
+    return 0;
+}
+
+
+
 int asst2_tests(int nargs, char **args){
     (void) nargs;
     (void) args;
@@ -158,9 +203,11 @@ int asst2_tests(int nargs, char **args){
     KASSERT(test_minimal_acquire_release_acquire_counter() == 0);
     KASSERT(test_pid_upper_limit_counter() == 0);
     KASSERT(test_pid_release() == 0);    
-    KASSERT(test_minimal_acquire_release_acquire_queue() == 0);
+    KASSERT(test_minimal_acquire_release_acquire_queue() == 0);    
 
-    
+
+    test_synch_hashtable();
+
 
     release_ids(10000,30000);
 
