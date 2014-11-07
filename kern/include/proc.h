@@ -36,9 +36,16 @@
  * Note: curproc is defined by <current.h>.
  */
 
+
+#include <types.h>
+#include <kern/errno.h>
+#include <lib.h>
 #include <spinlock.h>
 #include <thread.h> /* required for struct threadarray */
-
+#include <synch.h>
+#include <list.h>
+#include <addrspace.h>
+#include <vnode.h>
 struct addrspace;
 struct vnode;
 
@@ -56,10 +63,18 @@ struct proc {
 	/* VFS */
 	struct vnode *p_cwd;		/* current working directory */
 
-    /* PID */
-    int PID;                    /* the process ID of the current process */
+	/* PID */
+	int PID;                    /* the process ID of the current process */
 
 	/* add more material here as needed */
+	/* ASST2 */
+	struct list p_childlist; /* list with all child processes */
+	struct lock p_childlist_lock; /* lock for child process list */
+	struct proc* p_parent;		/* parent process if not exists NULL */
+	int p_returnvalue;		/* in case of waitpid to store return value */
+
+	// TODO variable for file_descriptor_table
+
 };
 
 /* This is the process structure for the kernel and for kernel-only threads. */
