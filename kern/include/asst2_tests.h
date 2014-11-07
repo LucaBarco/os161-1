@@ -18,4 +18,10 @@ int test_pid_upper_limit(void);
 
 
 
+
+
+
+int test_synch_hashtable(void);
+
+
 #endif
