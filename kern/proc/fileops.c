@@ -8,7 +8,7 @@
 
 
 
-
+// creates a new file descriptor
 struct file_descriptor* fd_create(void){
 
 	struct file_descriptor *fd;
@@ -28,15 +28,20 @@ struct file_descriptor* fd_create(void){
 
 
 	// the rest (mode, offset, and filename) will be set on call of open()
-
-	return NULL;
+	return fd;
 };
 
 
+// destroys a file descriptor
 void fd_destroy(struct file_descriptor* fd){
 
-	(void) fd;
+	// destroy the lock
+	lock_destroy(fd->fd_lock);
 
+	// free the memory
+	kfree(fd);
 };
+
+
 
 
