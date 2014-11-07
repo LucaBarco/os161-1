@@ -70,31 +70,13 @@ static int enter_forked_process(void *tf,  unsigned long n)
 
 /*
 --- fork
-x	From the syscall() function we get the parent trap frame as argument.
-x	We try to do as much tests as possible at the start of fork() so that we can fail early if necessary.
-x	Check if there are already too many processes on the system
-x	if yes -> error: ENPROC & return -1
-x	Check if current user already has too many processes
-x	if yes -> error: EMPROC & return -1
-x	Allocate new pid (getpid()) and assign it to new child process
-
-Create trapframe for child and copy all values of the parret trapframe
-
-x	Create new address space and copy the content from parent address space to child address space (as_copy(parent_as, child_as) ) (this should copy the memory content from the parent to the child space)
-x	Create a new process skeleton (proc_create_runprogram(name)), whereas name is given by the parent name + “_child”.
-x	Create child process thread
-x	Add parent information to the child process thread (initialises the semaphore for the waitpid mechanism)
-Create file descriptor table for child process and copy content of parent file descriptor table into it.
-Create open file table for child and copy content of parent open file handle table into it. Remove files from the child open file table that are opened as writable in the parent list. 
-x	Check if sufficient virtual memory for the new process was available (that means check if all create operations succeed)
-x	if not -> error: ENOMEM + return -1 + cleanup
-Add child process to child_process_list of parent process
-x	Set parent variable in child to current parent
-Modify return value of child trapframe to 0 (trapframe->v0 = 0)
-Modify return value of parent to the child pid (trapframe->v0 = child pid)
-return (if no error occured)
+fork() makes an exact copy of the invoking process. It creates a thread 
+(each user process has exact one thread) and copies the address space, 
+program code, a list of file_descriptors from files the parent process is using, 
+working directory of the parent process and makes sure that the parent and child 
+processes each observe the correct return value 
+(that is, 0 for the child and the newly created pid for the parent).
 */
-
 int sys_fork(struct trapframe *tf, int32_t *ret){
 	int new_pid = 0;
 	struct addrspace *new_as = NULL;
@@ -150,6 +132,11 @@ int sys_fork(struct trapframe *tf, int32_t *ret){
 		return result; 
 	}
 	new_proc->p_addrspace = new_as;
+
+
+	// TODO
+	// Create file descriptor table for child process and copy content of parent file descriptor table into it.
+	// Create open file table for child and copy content of parent open file handle table into it. Remove files from the child open file table that are opened as writable in the parent list. 
 
 	// Copy the trapframe to the heap so it's available to the child
 	trapf = kmalloc(sizeof(*tf));
