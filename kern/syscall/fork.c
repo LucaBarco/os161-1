@@ -25,7 +25,7 @@
 #include <proc.h>
 #include <current.h>
 #include <addrspace.h>
-
+#include <pid.h>
 #include <syscall.h>
 #include <mips/trapframe.h>
 
@@ -105,7 +105,7 @@ int sys_fork(struct trapframe *tf, int32_t *ret){
 	struct trapframe *trapf;
 	char name[16];
 	int result;
-	
+	spinlock_acquire(&curp->p_lock);
 
 	// check if there are already too many processes on the system
 	if(false)// TODO
@@ -152,26 +152,27 @@ int sys_fork(struct trapframe *tf, int32_t *ret){
 	new_proc->p_addrspace = new_as;
 
 	// Copy the trapframe to the heap so it's available to the child
-	trapf = kmalloc(sizeof(tf));
-	memcpy(tf,trapf,sizeof(tf));
+	trapf = kmalloc(sizeof(*tf));
+	memcpy(tf,trapf,sizeof(*tf));
 
-	result = thread_fork(name, &new_thread, curp, &enter_forked_process, NULL, 0);
+	result = thread_fork(name, &new_thread, new_proc, &enter_forked_process, trapf, 0);
 	if (result) {
 		kfree(trapf);
 		proc_destroy(new_proc);
 		return result; 
 	}
 
-	spinlock_acquire(&curp->p_lock);
+
 	/* we don't need to lock proc->p_lock as we have the only reference */
 	if (new_proc->p_cwd != NULL) {
 		VOP_INCREF(curp->p_cwd);
 		new_proc->p_cwd = curp->p_cwd;
 	}
-	spinlock_release(&curp->p_lock);
+	
 
 	/* Thread subsystem fields */
 	list_push_back(&curp->p_childlist, (void*)new_proc);
+	spinlock_release(&curp->p_lock);
 	
 	return 0;
 }
