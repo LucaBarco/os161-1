@@ -336,6 +336,7 @@ file      thread/threadlist.c
 # Process system
 #
 
+file      proc/fileops.c
 file      proc/pid.c
 file      proc/proc.c
 
