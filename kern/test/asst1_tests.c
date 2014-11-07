@@ -533,6 +533,8 @@ runthreadjointest(void)
 	for(int i=0; i < NTHREADS; i++)
 		thread_fork("child", &(children[i]), NULL, &go, NULL, i);
 
+
+
 	for(int i=0; i < NTHREADS; i++)
 	{
 		err = thread_join(children[i], &ret);

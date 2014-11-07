@@ -106,6 +106,7 @@
 #define ECONNRESET      62     /* Connection reset by peer */
 #define EMSGSIZE        63     /* Message too large */
 #define ENOTSUP         64     /* Threads operation not supported */
+#define EPIDOOR		65     /* Generated pid out of range */
 
 
 #endif /* _KERN_ERRNO_H_ */

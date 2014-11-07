@@ -10,18 +10,7 @@
 #define KASSERT_LIST(lst) KASSERT(lst->datatype == LISTTYPE)
 #define KASSERT_LISTNODE(node) KASSERT(node->datatype == LISTNODETYPE)
 
-struct listnode {
-    int datatype;
-    void* val;
-    struct listnode* next;
-};
 
-struct list {
-    int datatype;
-    struct listnode* head;
-    struct listnode* tail;
-    unsigned int size;
-};
 
 /* Allocates and returns a list node object containing given element */
 struct listnode* listnode_create(void* newval);
