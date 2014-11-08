@@ -25,7 +25,7 @@ struct file_descriptor{
 	int flags;
 
 	// the current offset of this filenode, this has to be set in the VNODE prior doing anything
-	int offset;
+	off_t offset;
 
 	int index;
 
@@ -86,11 +86,11 @@ struct file_descriptor* add_file_descriptor(struct fd_table* fdt, char* filename
 
 
 /* open, read, write, close starts here. boom. */
-
-// creates a file descriptor, will return approriate error code or 0 on success
 int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descriptor* fd);
+int fd_read(struct file_descriptor* fd, char *kbuf, size_t buflen, size_t* read_bytes);
+int fd_write(struct file_descriptor* fd, char* kbuf, size_t buflen, size_t* written_bytes);
+int fd_close(struct fd_table* fdt, struct file_descriptor* fd);
 
-int fd_read(int fd, void *buf, size_t buflen);
 
 
 

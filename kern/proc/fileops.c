@@ -9,6 +9,7 @@
 #include <kern/fcntl.h>
 #include <kern/errno.h>
 #include <vfs.h>
+#include <uio.h>
 
 // creates a new file descriptor
 struct file_descriptor* fd_create(void){
@@ -191,13 +192,118 @@ int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descrip
 	// add the vnode to the file descriptor
 	fd->vnode = mvnode;
 
+	// add one reference
+	fd->refcount++;
+
 
 	lock_release(fdt->lock);
 	return 0;
 }
 
-int fd_read(int fd, void *buf, size_t buflen){
+
+                                       
+int fd_read(struct file_descriptor* fd, char *kbuf, size_t buflen, size_t* read_bytes){
+
+	
+
+	int res = 0;
+
+	// lock
+	lock_acquire(fd->fd_lock);
+
+	
+
+	struct iovec iov;
+	struct uio io;
+
+	
+	off_t old_offset = fd->offset;
+
+	// initialize iovec and uio for reading
+	uio_kinit(&iov, &io, kbuf, buflen, fd->offset, UIO_READ); // this sets it to UIO_SYSSPACE, does it need to be UIO_USERSPACE? TODO
 
 
+	// READ
+	res = VOP_READ(fd->vnode, &io);
 
+	
+	// update offset in file descriptor
+	fd->offset = io.uio_offset; // TODO CHECK ON FAILURE
+
+	// set read bytes
+	*read_bytes = (size_t) ((unsigned int) io.uio_offset) - ((unsigned int) old_offset );
+
+	// free the stuff
+	kfree(&iov);
+	kfree(&io);
+
+	lock_release(fd->fd_lock);
+	return 0;
 };
+
+
+
+int fd_write(struct file_descriptor* fd, char* kbuf, size_t buflen, size_t* written_bytes){
+
+	
+
+	int res = 0;
+
+	// lock
+	lock_acquire(fd->fd_lock);
+
+	
+
+	struct iovec iov;
+	struct uio io;
+
+	off_t old_offset = fd->offset;
+	
+	// initialize iovec and uio for reading
+	uio_kinit(&iov, &io, kbuf, buflen, fd->offset, UIO_WRITE); // this sets it to UIO_SYSSPACE, does it need to be UIO_USERSPACE? TODO
+
+
+	// READ
+	res = VOP_WRITE(fd->vnode, &io);
+
+	
+	// update offset in file descriptor
+	fd->offset = io.uio_offset; // TODO CHECK ON FAILURE
+
+	// set written bytes
+	*written_bytes = (size_t) ((unsigned int) io.uio_offset) - ((unsigned int) old_offset );
+
+
+	// free the stuff
+	kfree(&iov);
+	kfree(&io);
+
+	lock_release(fd->fd_lock);
+	return 0;
+};
+
+
+int fd_close(struct fd_table* fdt, struct file_descriptor* fd){
+
+	(void) fdt;
+	(void) fd;
+
+	// decrease refcount
+	fd->refcount--;
+
+	// if refcount is 0 than it is save to close the vnode
+	if(fd->refcount ==0){
+		vfs_close(fd->vnode);
+	}
+
+	// TODO delete from file descriptor table
+
+
+
+	return 0;
+
+
+}
+
+
+
