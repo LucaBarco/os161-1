@@ -26,6 +26,9 @@ struct heap*
 heap_create(int(*comparator)(const void*, const void*))
 {
     struct heap* h = (struct heap*)kmalloc(sizeof(struct heap));
+    if (h == NULL) {
+        return NULL;
+    }
     h->comparator = comparator;
     h->vals = array_create();
     if (h->vals == NULL) {

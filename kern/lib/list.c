@@ -147,6 +147,9 @@ list_remove(struct list* lst, void* query_val, int(*comparator)(void* left, void
                 /* Removing after head. */
                 q->next = p->next;
             }
+            if (p == lst->tail) {
+              lst->tail = q;
+            }
             res = p->val;
             kfree(p);
             --lst->size;
