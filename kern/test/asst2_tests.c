@@ -169,6 +169,10 @@ int test_fd_create_destroy(){
 
     kprintf("\n****** done create destroy of file descriptor *******\n");
 
+    return 0;
+
+}
+
 
 // rudimentary test synch hashtable
 int test_synch_hashtable(){
@@ -225,14 +229,13 @@ int asst2_tests(int nargs, char **args){
     KASSERT(test_minimal_acquire_release_acquire_queue() == 0);    
     release_ids(10000,30000);
 
-
+    
     test_synch_hashtable();
 
 
     kprintf("starting tests for files ops \n");
     test_fd_create_destroy();
     
-
 
     return 0;
 }
