@@ -139,6 +139,35 @@ int test_minimal_acquire_release_acquire_queue(){
 
 }
 
+// do an final test: acquire - release - acquire
+int test_pid_in_use(){
+
+	kprintf("\n****** testing PID in use *******\n");
+
+	int pid = get_new_process_id();
+
+	KASSERT(pid != -1);
+
+	kprintf("\n geht noch 1\n");
+
+	// pid should be available
+	KASSERT(pidUsed(pid) == 0);
+
+	kprintf("\n geht noch 2\n");
+
+    	release_process_id(pid);
+
+	kprintf("\n geht noch 3\n");
+
+	// pid should not be available
+	KASSERT(pidUsed(pid) != 0);
+	kprintf("\n geht noch 4\n");
+
+	kprintf("\n******  done testing PID in use *******\n");
+
+	return 0;
+}
+
 
 // release ids in a range
 void release_ids(int from, int to){
@@ -150,19 +179,19 @@ void release_ids(int from, int to){
 
 
 int asst2_tests(int nargs, char **args){
-    (void) nargs;
-    (void) args;
+	(void) nargs;
+	(void) args;
 
-    kprintf("starting tests for PID");
-    // DO NOT CHANGE THE ORDER HERE!
-    KASSERT(test_minimal_acquire_release_acquire_counter() == 0);
-    KASSERT(test_pid_upper_limit_counter() == 0);
-    KASSERT(test_pid_release() == 0);    
-    KASSERT(test_minimal_acquire_release_acquire_queue() == 0);
+	kprintf("starting tests for PID");
+	KASSERT(test_pid_in_use() == 0);
+	// DO NOT CHANGE THE ORDER HERE!
+	KASSERT(test_minimal_acquire_release_acquire_counter() == 0);
+	KASSERT(test_pid_upper_limit_counter() == 0);
+	KASSERT(test_pid_release() == 0);    
+	KASSERT(test_minimal_acquire_release_acquire_queue() == 0);
 
     
+	release_ids(10000,30000);
 
-    release_ids(10000,30000);
-
-    return 0;
+	return 0;
 }

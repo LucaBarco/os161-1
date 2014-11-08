@@ -16,6 +16,6 @@ void release_ids(int from, int to);
 
 int test_pid_upper_limit(void);
 
-
+int test_pid_in_use(void);
 
 #endif
