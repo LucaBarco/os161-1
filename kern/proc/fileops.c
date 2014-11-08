@@ -29,7 +29,10 @@ struct file_descriptor* fd_create(void){
 	}
 
 
-	// the rest (mode, offset, and filename) will be set on call of open()
+	fd->refcount = 0;
+
+
+	// the rest (mode, offset, and filename) will be set on call of fd_open()
 	return fd;
 };
 
@@ -156,7 +159,7 @@ struct file_descriptor* add_file_descriptor(struct fd_table* fdt, char* filename
 }
 
 
-// creates a file descriptor for reading, will return approriate error code or 0 on success
+// creates a file descriptor, will return approriate error code or 0 on success
 int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descriptor* fd){
 
 	// TODO, check if EFAULT	filename was an invalid pointer.
@@ -177,7 +180,6 @@ int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descrip
 		return res;
 	}
 
-
 	// create the file descriptor
 	fd = add_file_descriptor(fdt, filename, flags);
 
@@ -194,3 +196,8 @@ int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descrip
 	return 0;
 }
 
+int fd_read(int fd, void *buf, size_t buflen){
+
+
+
+};
