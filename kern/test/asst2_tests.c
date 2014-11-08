@@ -12,6 +12,8 @@
 #include <asst2_tests.h>
 #include <limits.h>
 #include <fileops.h>
+#include <kern/fcntl.h>
+
 
 
 
@@ -157,20 +159,43 @@ void release_ids(int from, int to){
 // test file descriptor creation and destroy
 int test_fd_create_destroy(){
 
-    kprintf("\n****** testing create destroy of file descriptor *******\n");
+    kprintf("\n****** testing create destroy of file descriptor table *******\n");
 
     struct file_descriptor *fd;
-
     fd = fd_create();
-
     KASSERT(fd!=NULL);
-
     fd_destroy(fd);
 
-    kprintf("\n****** done create destroy of file descriptor *******\n");
+    kprintf("\n****** done create destroy of file descriptor table *******\n");
 
     return 0;
 
+}
+
+// test file descriptor table, rudimentary
+int test_fd_table(){
+
+    kprintf("\n****** testing create destroy of file table *******\n");
+
+    // create a file descriptor table without a process
+    struct fd_table* fdt;
+
+    fd_table_create(NULL);
+    KASSERT(fdt!=NULL);
+
+    // add a file descriptor
+    char filename[] = "con:";
+    struct file_descriptor* fd = add_file_descriptor(fdt, filename, O_RDONLY);
+
+    (void) fd;
+
+
+    // destroy it again
+    fd_table_destroy(fdt);
+    KASSERT(fdt==NULL);
+
+    kprintf("\n****** done testingt file table *******\n");
+    return 0;
 }
 
 
@@ -234,8 +259,11 @@ int asst2_tests(int nargs, char **args){
 
 
     kprintf("starting tests for files ops \n");
-    test_fd_create_destroy();
-    
+    test_fd_create_destroy();    
+    test_fd_table();
+
+
 
     return 0;
+    
 }

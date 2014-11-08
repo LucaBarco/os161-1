@@ -20,7 +20,7 @@ int test_fd_create_destroy(void);
 
 
 
-
+int test_fd_table(void);
 
 
 

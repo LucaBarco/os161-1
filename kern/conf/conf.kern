@@ -392,7 +392,7 @@ file      syscall/getpid.c
 file      syscall/open.c
 file      syscall/read.c
 file      syscall/write.c
-file      syscall/open.c
+file      syscall/close.c
 
 
 #
