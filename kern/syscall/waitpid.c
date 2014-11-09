@@ -59,7 +59,7 @@ int sys_waitpid(int pid, int *status, int options, int *ret) {
 	}
 
 	lock_acquire(&curp->p_childlist_lock);
-	childp = (struct proc*)list_find(&curp->p_childlist, (void*) &pid, &proc_comparator);;
+	childp = (struct proc*)list_find(&curp->p_childlist, (void*) &pid, &proc_comparator);
 	
 
 	// check if pid argument named a process that was not a child of the current process
