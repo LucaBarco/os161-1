@@ -86,13 +86,23 @@ struct file_descriptor* add_file_descriptor(struct fd_table* fdt, char* filename
 
 
 /* open, read, write, close starts here. boom. */
+
+
+//return an error code. the id of the file_descriptor can be retrieved via the file_descriptor pointer
 int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descriptor* fd);
+
+
 int fd_read(struct file_descriptor* fd, char *kbuf, size_t buflen, size_t* read_bytes);
+
+
 int fd_write(struct file_descriptor* fd, char* kbuf, size_t buflen, size_t* written_bytes);
+
+
 int fd_close(struct fd_table* fdt, struct file_descriptor* fd);
 
 
-
+// returns the filedescriptor for a given id
+struct file_descriptor* get_fd(struct fd_table* fdt, int fd_id);
 
 
 

@@ -51,6 +51,7 @@
 #include <pid.h>
 #include <synch_hashtable.h>
 #include <fileops.h>
+#include <kern/fcntl.h>
 
 
 /*
@@ -86,6 +87,24 @@ proc_create(const char *name)
 		return NULL;
 	}
 
+	// add file descriptors for stdin, stdoud, stderr
+	// we can not do this for the kernel process since VFS is not yet bootstrapped	
+	
+	if(kproc!=NULL){
+		struct file_descriptor*  fd_0;
+		struct file_descriptor*  fd_1;
+		struct file_descriptor*  fd_2;
+
+		char console[] = "con:";
+
+		fd_open(proc->p_fd_table, console, O_RDONLY, fd_0);
+		fd_open(proc->p_fd_table, console, O_WRONLY, fd_1);
+		fd_open(proc->p_fd_table, console, O_WRONLY, fd_2);
+
+		KASSERT(fd_2->index ==2);
+	}	
+
+	
 
 	threadarray_init(&proc->p_threads);
 	spinlock_init(&proc->p_lock);

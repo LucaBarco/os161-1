@@ -167,7 +167,7 @@ int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descrip
 
 
 	// I think we don't have to do this here since we will only have one thread but you never know..
-	lock_acquire(fdt->lock);
+	//lock_acquire(fdt->lock);
 	
 
 	// generate a vnode pointer
@@ -196,7 +196,7 @@ int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descrip
 	fd->refcount++;
 
 
-	lock_release(fdt->lock);
+	//lock_release(fdt->lock);
 	return 0;
 }
 
@@ -303,6 +303,13 @@ int fd_close(struct fd_table* fdt, struct file_descriptor* fd){
 	return 0;
 
 
+}
+
+struct file_descriptor* get_fd(struct fd_table* fdt, int fd_id){
+
+	return fdt->fds[fd_id];
+
+	//return NULL;
 }
 
 
