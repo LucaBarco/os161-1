@@ -116,15 +116,21 @@ struct hashtable*
 hashtable_create(void)
 {
     struct hashtable* h = (struct hashtable*)kmalloc(sizeof(struct hashtable));
+    if (h == NULL) {
+        return NULL;
+    }
     h->size = 0;
     h->arraysize = MIN_SIZE;
     h->vals = (struct list**)kmalloc(MIN_SIZE * sizeof(struct list*));
     if (h->vals == NULL) {
+        kfree(h);
         return NULL;
     }
     /* Allocate lists for the array. */
     int err = init_array_with_lists(h->vals, 0, h->arraysize);
     if (err == ENOMEM) {
+        kfree(h->vals);
+        kfree(h);
         return NULL;
     }
     h->datatype = HASHTABLETYPE;
@@ -204,6 +210,20 @@ grow(struct hashtable* h)
     return 0;
 }
 
+static
+int
+key_comparator(void* left, void* right)
+{
+    struct kv_pair* l = (struct kv_pair*)left;
+    struct kv_pair* r = (struct kv_pair*)right;
+    KASSERT_KV(l);
+    KASSERT_KV(r);
+    if (l->keylen == r->keylen) {
+        return strcmp(l->key, r->key);
+    }
+    return (l->keylen - r->keylen);
+}
+
 int
 hashtable_add(struct hashtable* h, char* key, unsigned int keylen, void* val)
 {
@@ -217,7 +237,16 @@ hashtable_add(struct hashtable* h, char* key, unsigned int keylen, void* val)
     int index = hash(key, keylen) % h->arraysize;
     struct list* chain = h->vals[index];
     KASSERT(chain != NULL);
-    
+
+    struct kv_pair query_item;
+    query_item.datatype = KVTYPE;
+    query_item.key = key;
+    query_item.keylen = keylen;
+
+    /* Remove any existing value with the same key. */
+    struct kv_pair* removed
+        = (struct kv_pair*)list_remove(chain, &query_item, &key_comparator);
+
     /* Append the new item to end of chain. */
     struct kv_pair* new_item = kv_create(key, keylen, val);
     if (new_item == NULL) {
@@ -228,23 +257,11 @@ hashtable_add(struct hashtable* h, char* key, unsigned int keylen, void* val)
         return ENOMEM;
     }
 
-    ++h->size;
+    if (!removed) {
+        ++h->size;
+    }
 
     return 0;
-}
-
-static
-int
-key_comparator(void* left, void* right)
-{
-    struct kv_pair* l = (struct kv_pair*)left;
-    struct kv_pair* r = (struct kv_pair*)right;
-    KASSERT_KV(l);
-    KASSERT_KV(r);
-    if (l->keylen == r->keylen) {
-        return strcmp(l->key, r->key);
-    }
-    return (l->keylen - r->keylen);    
 }
 
 void*
@@ -374,6 +391,7 @@ hashtable_destroy(struct hashtable* h)
 {
     if (h != NULL) {
         KASSERT_HASHTABLE(h);
+        cleanup_array_with_lists(h->vals, 0, h->arraysize);
         kfree(h->vals);
     }
     kfree(h);
