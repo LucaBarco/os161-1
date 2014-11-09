@@ -73,7 +73,9 @@ struct proc {
 	struct proc* p_parent;		/* parent process if not exists NULL */
 	int p_returnvalue;		/* in case of waitpid to store return value */
 
-	// TODO variable for file_descriptor_table
+	/* we need two structs for the files. A hashtable to find the file descriptor and a list with file descriptors to copy them when forking */
+	struct fd_table* p_fd_table;
+
 
 };
 

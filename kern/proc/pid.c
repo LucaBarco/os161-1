@@ -13,8 +13,8 @@ The Process Identification Stuff
 
 
 // this will be incremented until it reaches the limit defined in os161/kern/include/kern/limits.h
-// set it to limit -1 because we will increment and return the value
-int PID_counter = __PID_MIN - 1;
+// 0,1,2 should be reserved for stdin, stdout and stderr. __PID_MIN is 2 and we will increase PID_COUNTER before first return
+int PID_counter = __PID_MIN;
 
 struct queue *PID_queue;
 struct lock *l;

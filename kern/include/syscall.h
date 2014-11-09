@@ -66,4 +66,11 @@ int sys_reboot(int code);
 int sys___time(userptr_t user_seconds, userptr_t user_nanoseconds);
 int execv(const char *progam, char **args);
 
+
+// fileIO
+int sys_open(struct trapframe *tf, int32_t *ret);
+int sys_read(struct trapframe *tf, int32_t *ret);
+int sys_write(struct trapframe *tf, int32_t *ret);
+int sys_close(struct trapframe *tf, int32_t *ret);
+
 #endif /* _SYSCALL_H_ */

@@ -10,7 +10,7 @@
 int32_t sys_getpid(){
 
 
-    // TODO error handling!
+    // TODO error handling! - nope, we don't get errors here ;]
 
     // just return the current thread's process' pid
     struct proc *parent_proc =  curthread->t_proc;
