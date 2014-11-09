@@ -5,11 +5,15 @@
 #include <synch.h>
 #include <synch_queue.h>
 #include <synch_heap.h>
+#include <synch_hashtable.h>
 #include <wchan.h>
 #include <test.h>
 #include <pid.h>
 #include <asst2_tests.h>
 #include <limits.h>
+#include <fileops.h>
+#include <kern/fcntl.h>
+
 
 
 
@@ -171,14 +175,104 @@ void release_ids(int from, int to){
 
 
 
+
+// test file operations
+
+// test file descriptor creation and destroy
+int test_fd_create_destroy(){
+
+    kprintf("\n****** testing create destroy of file descriptor table *******\n");
+
+    struct file_descriptor *fd;
+    fd = fd_create();
+    KASSERT(fd!=NULL);
+    fd_destroy(fd);
+
+    kprintf("\n****** done create destroy of file descriptor table *******\n");
+
+    return 0;
+
+}
+
+// test file descriptor table, rudimentary
+int test_fd_table(){
+
+    kprintf("\n****** testing create destroy of file table *******\n");
+
+    // create a file descriptor table without a process
+    struct fd_table* fdt;
+
+    fd_table_create(NULL);
+    KASSERT(fdt!=NULL);
+
+    // add a file descriptor
+    char filename[] = "con:";
+    struct file_descriptor* fd = add_file_descriptor(fdt, filename, O_RDONLY);
+
+    (void) fd;
+
+
+    // destroy it again
+    fd_table_destroy(fdt);
+    KASSERT(fdt==NULL);
+
+    kprintf("\n****** done testingt file table *******\n");
+    return 0;
+}
+
+
+// rudimentary test synch hashtable
+int test_synch_hashtable(){
+
+    kprintf("\n****** testing synch hashmap *******\n");
+
+    struct synch_hashtable *ht;
+
+    ht = synch_hashtable_create();
+
+    int val = 26;
+
+    char key3[] = "felix";
+
+    kprintf("test add \n");
+    synch_hashtable_add(ht, key3, 5, &val);
+
+    kprintf("test find \n");
+    int res = *(int*)synch_hashtable_find(ht, key3, 5);
+    kprintf("result %d \n", res);
+
+    kprintf("test empty \n");
+    KASSERT(synch_hashtable_isempty(ht) == 0);
+
+    kprintf("test size \n");
+    KASSERT(synch_hashtable_getsize(ht)==1);
+
+
+    kprintf("test remove \n");
+    synch_hashtable_remove(ht, key3, 5);
+
+    KASSERT(synch_hashtable_isempty(ht) == 1);
+
+
+    synch_hashtable_destroy(ht);
+
+    kprintf("\n****** done testing synch hashmap *******\n");
+
+
+    return 0;
+}
+
+
+
 int asst2_tests(int nargs, char **args){
+
 	(void) nargs;
 	(void) args;
 
 	kprintf("starting tests for PID");
 	KASSERT(test_pid_in_use() == 0);
 	// DO NOT CHANGE THE ORDER HERE!
-/*	
+	
 	KASSERT(test_minimal_acquire_release_acquire_counter() == 0);
 	KASSERT(test_pid_upper_limit_counter() == 0);
 	KASSERT(test_pid_release() == 0);    
@@ -186,6 +280,13 @@ int asst2_tests(int nargs, char **args){
 
     
 	release_ids(10000,30000);
-*/
+
+
+	test_synch_hashtable();
+
+
+	kprintf("starting tests for files ops \n");
+	test_fd_create_destroy();    
+	test_fd_table();
 	return 0;
 }

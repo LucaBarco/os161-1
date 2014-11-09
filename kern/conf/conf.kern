@@ -289,6 +289,7 @@ file      lib/time.c
 file      lib/uio.c
 file      lib/synch_queue.c
 file      lib/synch_heap.c
+file      lib/synch_hashtable.c
 
 defoption noasserts
 
@@ -336,6 +337,7 @@ file      thread/threadlist.c
 # Process system
 #
 
+file      proc/fileops.c
 file      proc/pid.c
 file      proc/proc.c
 
@@ -386,6 +388,12 @@ file      syscall/execv.c
 file      syscall/fork.c
 file      syscall/getpid.c
 file      syscall/waitpid.c
+
+# file related system calls
+file      syscall/open.c
+file      syscall/read.c
+file      syscall/write.c
+file      syscall/close.c
 
 
 #
