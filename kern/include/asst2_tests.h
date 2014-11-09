@@ -16,15 +16,12 @@ void release_ids(int from, int to);
 
 int test_pid_upper_limit(void);
 
+int test_pid_in_use(void);
+
 int test_fd_create_destroy(void);
-
-
 
 int test_fd_table(void);
 
-
-
 int test_synch_hashtable(void);
-
 
 #endif

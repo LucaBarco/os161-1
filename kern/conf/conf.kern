@@ -387,6 +387,8 @@ file      syscall/time_syscalls.c
 file      syscall/execv.c
 file      syscall/fork.c
 file      syscall/getpid.c
+file      syscall/waitpid.c
+file      syscall/exit.c
 
 # file related system calls
 file      syscall/open.c

@@ -143,6 +143,28 @@ int test_minimal_acquire_release_acquire_queue(){
 
 }
 
+// do an final test: acquire - release - acquire
+int test_pid_in_use(){
+
+	kprintf("\n****** testing PID in use *******\n");
+
+	int pid = get_new_process_id();
+
+	KASSERT(pid != -1);
+
+	// pid should be available
+	KASSERT(pidUsed(pid) == 1);
+
+    	release_process_id(pid);
+
+	// pid should not be available
+	KASSERT(pidUsed(pid) == 0);
+
+	kprintf("\n******  done testing PID in use *******\n");
+
+	return 0;
+}
+
 
 // release ids in a range
 void release_ids(int from, int to){
@@ -243,27 +265,28 @@ int test_synch_hashtable(){
 
 
 int asst2_tests(int nargs, char **args){
-    (void) nargs;
-    (void) args;
 
-    kprintf("starting tests for PID \n");
-    // DO NOT CHANGE THE ORDER HERE!
-    KASSERT(test_minimal_acquire_release_acquire_counter() == 0);
-    KASSERT(test_pid_upper_limit_counter() == 0);
-    KASSERT(test_pid_release() == 0);    
-    KASSERT(test_minimal_acquire_release_acquire_queue() == 0);    
-    release_ids(10000,30000);
+	(void) nargs;
+	(void) args;
+
+	kprintf("starting tests for PID");
+	KASSERT(test_pid_in_use() == 0);
+	// DO NOT CHANGE THE ORDER HERE!
+	
+	KASSERT(test_minimal_acquire_release_acquire_counter() == 0);
+	KASSERT(test_pid_upper_limit_counter() == 0);
+	KASSERT(test_pid_release() == 0);    
+	KASSERT(test_minimal_acquire_release_acquire_queue() == 0);
 
     
-    test_synch_hashtable();
+	release_ids(10000,30000);
 
 
-    kprintf("starting tests for files ops \n");
-    test_fd_create_destroy();    
-    test_fd_table();
+	test_synch_hashtable();
 
 
-
-    return 0;
-    
+	kprintf("starting tests for files ops \n");
+	test_fd_create_destroy();    
+	test_fd_table();
+	return 0;
 }

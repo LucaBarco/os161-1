@@ -42,6 +42,8 @@
 static int enter_forked_process(void *tf,  unsigned long n)
 {
 	(void)n;
+
+	kprintf("FORK DEBUG: enter forked process\n");
 	
 	// copy trapframe
 	struct trapframe trapf = (*((struct trapframe *) tf));// = *((struct trapframe*)tf);
@@ -78,6 +80,7 @@ processes each observe the correct return value
 (that is, 0 for the child and the newly created pid for the parent).
 */
 int sys_fork(struct trapframe *tf, int32_t *ret){
+kprintf("FORK DEBUG: 0\n");
 	int new_pid = 0;
 	struct addrspace *new_as = NULL;
 	struct proc* new_proc = NULL;
@@ -87,6 +90,7 @@ int sys_fork(struct trapframe *tf, int32_t *ret){
 	struct trapframe *trapf;
 	char name[16];
 	int result;
+
 	spinlock_acquire(&curp->p_lock);
 
 	// check if there are already too many processes on the system
@@ -95,17 +99,23 @@ int sys_fork(struct trapframe *tf, int32_t *ret){
 		return ENPROC;
 	}
 
+kprintf("FORK DEBUG: 1\n");
+
 	// check if current user already has too many processes
 	if(false)// TODO
 	{
 		return EMPROC;
 	}
 
+kprintf("FORK DEBUG: 2\n");
+
 	// generate process name
       	result = snprintf(name, sizeof(name), "child_%d", new_pid);
 	if (result < 0 ) {
 		return result; 
 	}
+
+kprintf("FORK DEBUG: 3\n");
 
 	// create child process
 	new_proc = proc_create_runprogram(name);
@@ -123,6 +133,8 @@ int sys_fork(struct trapframe *tf, int32_t *ret){
 	}
 	*/
 	
+kprintf("FORK DEBUG: 4\n");
+
 	memcpy(ret, &new_pid, sizeof(int));
 
 	/* Create a new address space and copy content of current process in it. */
@@ -134,6 +146,8 @@ int sys_fork(struct trapframe *tf, int32_t *ret){
 	new_proc->p_addrspace = new_as;
 
 
+kprintf("FORK DEBUG: 5\n");
+
 	// TODO
 	// Create file descriptor table for child process and copy content of parent file descriptor table into it.
 	// Create open file table for child and copy content of parent open file handle table into it. Remove files from the child open file table that are opened as writable in the parent list. 
@@ -142,6 +156,8 @@ int sys_fork(struct trapframe *tf, int32_t *ret){
 	trapf = kmalloc(sizeof(*tf));
 	memcpy(tf,trapf,sizeof(*tf));
 
+kprintf("FORK DEBUG: 6\n");
+
 	result = thread_fork(name, &new_thread, new_proc, &enter_forked_process, trapf, 0);
 	if (result) {
 		kfree(trapf);
@@ -149,6 +165,7 @@ int sys_fork(struct trapframe *tf, int32_t *ret){
 		return result; 
 	}
 
+kprintf("FORK DEBUG: 7\n");
 
 	/* we don't need to lock proc->p_lock as we have the only reference */
 	if (new_proc->p_cwd != NULL) {
@@ -156,6 +173,7 @@ int sys_fork(struct trapframe *tf, int32_t *ret){
 		new_proc->p_cwd = curp->p_cwd;
 	}
 	
+kprintf("FORK DEBUG: 8\n");
 
 	/* Thread subsystem fields */
 	list_push_back(&curp->p_childlist, (void*)new_proc);
