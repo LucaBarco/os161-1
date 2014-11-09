@@ -12,6 +12,7 @@
 #include <asst2_tests.h>
 #include <limits.h>
 #include <fileops.h>
+#include <proc.h>
 #include <kern/fcntl.h>
 
 
@@ -202,7 +203,7 @@ int test_fd_table(){
     // create a file descriptor table without a process
     struct fd_table* fdt;
 
-    fd_table_create(NULL);
+    fdt = fd_table_create(NULL);
     KASSERT(fdt!=NULL);
 
     // add a file descriptor
@@ -214,7 +215,7 @@ int test_fd_table(){
 
     // destroy it again
     fd_table_destroy(fdt);
-    KASSERT(fdt==NULL);
+    
 
     kprintf("\n****** done testingt file table *******\n");
     return 0;
@@ -264,13 +265,62 @@ int test_synch_hashtable(){
 
 
 
+// tests fileoperations by creating a new process and doing some read write stuff
+int test_file_ops(){
+
+
+    kprintf("\n****** testing read write *******\n");
+
+    // create a new process
+    struct proc* p;
+    char name[] =  "test";
+    p = proc_create_runprogram(name);
+
+    // the file table should have 3 entries now
+    struct fd_table* fdt = p->p_fd_table;
+
+    KASSERT(fdt->fds[0] != NULL);
+    KASSERT(fdt->fds[0]->index == 0);
+    KASSERT(fdt->fds[1] != NULL);
+    KASSERT(fdt->fds[1]->index == 1);
+    KASSERT(fdt->fds[2] != NULL);
+    KASSERT(fdt->fds[2]->index == 2);    
+
+
+    // let's write something to standard out
+    char content[] = "hello";
+
+    size_t written_bytes;
+
+    fd_write(fdt->fds[1], content, 5, &written_bytes);
+
+    KASSERT(written_bytes == 5);
+
+    // can we read?
+    char read_content[10];
+    fd_read(fdt->fds[0], read_content, 10, &written_bytes);
+
+    kprintf("\n\n");
+    fd_write(fdt->fds[1], read_content, 10, &written_bytes);
+
+    kprintf("\n****** done testing read write *******\n");
+
+    return 0;
+
+}
+
+
+
+
+
+
 int asst2_tests(int nargs, char **args){
 
 	(void) nargs;
 	(void) args;
 
 	kprintf("starting tests for PID");
-	KASSERT(test_pid_in_use() == 0);
+	//KASSERT(test_pid_in_use() == 0);
 	// DO NOT CHANGE THE ORDER HERE!
 	
 	KASSERT(test_minimal_acquire_release_acquire_counter() == 0);
@@ -281,12 +331,13 @@ int asst2_tests(int nargs, char **args){
     
 	release_ids(10000,30000);
 
-
+    kprintf("starting tests for hash table \n");
 	test_synch_hashtable();
 
 
 	kprintf("starting tests for files ops \n");
 	test_fd_create_destroy();    
 	test_fd_table();
+    test_file_ops();
 	return 0;
 }

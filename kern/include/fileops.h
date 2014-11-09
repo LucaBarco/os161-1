@@ -89,7 +89,7 @@ struct file_descriptor* add_file_descriptor(struct fd_table* fdt, char* filename
 
 
 //return an error code. the id of the file_descriptor can be retrieved via the file_descriptor pointer
-int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descriptor* fd);
+int fd_open(struct fd_table* fdt, char* filename, int flags, int* fd_id);
 
 
 int fd_read(struct file_descriptor* fd, char *kbuf, size_t buflen, size_t* read_bytes);

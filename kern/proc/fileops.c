@@ -161,7 +161,7 @@ struct file_descriptor* add_file_descriptor(struct fd_table* fdt, char* filename
 
 
 // creates a file descriptor, will return approriate error code or 0 on success
-int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descriptor* fd){
+int fd_open(struct fd_table* fdt, char* filename, int flags, int* fd_index){
 
 	// TODO, check if EFAULT	filename was an invalid pointer.
 
@@ -173,6 +173,10 @@ int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descrip
 	// generate a vnode pointer
 	struct vnode* mvnode;
 
+	// copy the filename since vfs_open will fiddle around with it
+	char* filename_copy =  NULL;
+	filename_copy = kstrdup(filename);
+
 	// try to open the vnode
 	int res = vfs_open(filename, flags, 0, &mvnode);
 
@@ -182,18 +186,25 @@ int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descrip
 	}
 
 	// create the file descriptor
-	fd = add_file_descriptor(fdt, filename, flags);
+	struct file_descriptor* fd_temp = add_file_descriptor(fdt, filename_copy, flags);
 
-	if(fd==NULL){ // probably too many open files.
+	// return its id
+	*fd_index = fd_temp->index;
+	
+
+	// free the filename copy
+	kfree(filename_copy);
+
+	if(fd_temp==NULL){ // probably too many open files.
 		vfs_close(mvnode);
 		return EMFILE;
 	}
 
 	// add the vnode to the file descriptor
-	fd->vnode = mvnode;
+	fd_temp->vnode = mvnode;
 
 	// add one reference
-	fd->refcount++;
+	fd_temp->refcount++;
 
 
 	//lock_release(fdt->lock);
@@ -234,8 +245,8 @@ int fd_read(struct file_descriptor* fd, char *kbuf, size_t buflen, size_t* read_
 	*read_bytes = (size_t) ((unsigned int) io.uio_offset) - ((unsigned int) old_offset );
 
 	// free the stuff
-	kfree(&iov);
-	kfree(&io);
+	//kfree(&iov);
+	//kfree(&io);
 
 	lock_release(fd->fd_lock);
 	return 0;
@@ -275,8 +286,8 @@ int fd_write(struct file_descriptor* fd, char* kbuf, size_t buflen, size_t* writ
 
 
 	// free the stuff
-	kfree(&iov);
-	kfree(&io);
+	//kfree(&iov);
+	//kfree(&io);
 
 	lock_release(fd->fd_lock);
 	return 0;

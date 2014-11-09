@@ -31,16 +31,16 @@ int sys_open(struct trapframe *tf, int32_t *ret){
 	struct fd_table* fdt = curthread->t_proc->p_fd_table;
 
 	// now call the open function
-	struct file_descriptor* fd;
+	int fdi;
 
-	int res = fd_open(fdt, filename, flags, fd);
+	int res = fd_open(fdt, filename, flags, &fdi);
 
 	if(res){
 		return res;
 	}
 
 	// set the fd ID
-	*ret = fd->index;
+	*ret = fdi;
 
 	// and we are done
 	return 0;
