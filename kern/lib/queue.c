@@ -17,8 +17,12 @@ struct queue*
 queue_create(void)
 {
     struct queue* q = (struct queue*)kmalloc(sizeof(struct queue));
+    if (q == NULL) {
+        return NULL;
+    }
     q->vals = list_create();
     if (q->vals == NULL) {
+        kfree(q);
         return NULL;
     }
     q->datatype = QUEUETYPE;

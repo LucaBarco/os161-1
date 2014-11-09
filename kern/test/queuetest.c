@@ -25,6 +25,7 @@ queuetest(int nargs, char **args)
     /* push back TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
+        KASSERT(elem != NULL);
         *elem = i;
         /* check for ENOMEM */
         KASSERT(queue_push(newqueue, (void*) elem) == 0);
@@ -49,6 +50,7 @@ queuetest(int nargs, char **args)
     /* push back TESTSIZE number of elements */
     for (i = 0; i < TESTSIZE; ++i) {
         elem = (int*)kmalloc(sizeof(int));
+        KASSERT(elem != NULL);
         *elem = i;
         /* check for ENOMEM */
         KASSERT(queue_push(newqueue, (void*) elem) == 0);
