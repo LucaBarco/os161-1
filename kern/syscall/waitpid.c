@@ -41,19 +41,9 @@ int sys_waitpid(int pid, int *status, int options, int *ret) {
 	int result;
 
 	// chek if pid argument named a nonexistent process
-	if(pidUsed(pid))
+	if(pidUsed(pid) != 1)
 	{
 		return ESRCH;
-	}
-
-	lock_acquire(&curp->p_childlist_lock);
-	childp = (struct proc*)list_find(&curp->p_childlist, (void*) &pid, &proc_comparator);
-	lock_release(&curp->p_childlist_lock);
-
-	// check if pid argument named a process that was not a child of the current process
-	if(childp == NULL)
-	{
-		return ECHILD;
 	}
 
 	// check if status is invalid
@@ -68,19 +58,34 @@ int sys_waitpid(int pid, int *status, int options, int *ret) {
 		return EINVAL;
 	}
 
+	lock_acquire(&curp->p_childlist_lock);
+	childp = (struct proc*)list_find(&curp->p_childlist, (void*) &pid, &proc_comparator);;
+	
+
+	// check if pid argument named a process that was not a child of the current process
+	if(childp == NULL)
+	{
+		lock_release(&curp->p_childlist_lock);
+		return ECHILD;
+	}
+
 	childt = threadarray_get(&childp->p_threads, 0);
 	if( childt == NULL)
 	{
+		lock_release(&curp->p_childlist_lock);
 		return -1;
 	}
 
 	result = thread_join(childt, &childreturn);
 	if(result)
 	{
+		lock_release(&curp->p_childlist_lock);
 		return result;
 	}
 
 	memcpy(ret, &childp->PID, sizeof(int));
+
+	lock_release(&curp->p_childlist_lock);
 
 	return 0;
 }

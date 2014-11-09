@@ -12,9 +12,6 @@ The Process Identification Stuff
 #include <lib.h>
 
 
-
-
-
 // this will be incremented until it reaches the limit defined in os161/kern/include/kern/limits.h
 // set it to limit -1 because we will increment and return the value
 int PID_counter = __PID_MIN - 1;
@@ -81,8 +78,8 @@ void release_process_id(int i){
 
 	// remove pid from used list
 	list_remove(lst_usedPIDs, (void*) &i, &int_comparator);
-	//int ret = *(int*)list_remove(lst_usedPIDs, (void*) i, &int_comparator);		//TODO change return to check pass fail
-	//if(ret != i)		
+	//int *ret = *(int*)list_remove(lst_usedPIDs, (void*) i, &int_comparator);		//TODO change return to check pass fail
+	//if(res == NULL || *ret != i)		
 	//	return ret;
 
 	lock_release(l);
@@ -114,11 +111,13 @@ void pid_cleanup(){
 
 // check if pid is in use
 int pidUsed(int pid){
-	int res = *(int*)list_find(lst_usedPIDs, (void*) &pid, &int_comparator);
-	if (res == pid)
-		return 0;
+	
+	int *res;
+	res = (int*)list_find(lst_usedPIDs, (void*) &pid, &int_comparator);
+	if (res != NULL && *res == pid)
+		return 1;
 	else
-		return -1;	
+		return 0;	
 };
 
 
