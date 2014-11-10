@@ -12,8 +12,9 @@
 #include <asst2_tests.h>
 #include <limits.h>
 #include <fileops.h>
+#include <proc.h>
 #include <kern/fcntl.h>
-
+#include <vnode.h>
 
 
 
@@ -202,7 +203,7 @@ int test_fd_table(){
     // create a file descriptor table without a process
     struct fd_table* fdt;
 
-    fd_table_create(NULL);
+    fdt = fd_table_create(NULL);
     KASSERT(fdt!=NULL);
 
     // add a file descriptor
@@ -214,7 +215,7 @@ int test_fd_table(){
 
     // destroy it again
     fd_table_destroy(fdt);
-    KASSERT(fdt==NULL);
+    
 
     kprintf("\n****** done testingt file table *******\n");
     return 0;
@@ -264,13 +265,168 @@ int test_synch_hashtable(){
 
 
 
+// tests fileoperations by creating a new process and doing some read write stuff
+int test_file_ops(){
+
+
+    kprintf("\n****** testing read  *******\n");
+
+    // create a new process
+    struct proc* p;
+    char name[] =  "test";
+    p = proc_create_runprogram(name);
+
+    // the file table should have 3 entries now
+    struct fd_table* fdt = p->p_fd_table;
+
+    KASSERT(fdt->fds[0] != NULL);
+    KASSERT(fdt->fds[0]->index == 0);
+    KASSERT(fdt->fds[1] != NULL);
+    KASSERT(fdt->fds[1]->index == 1);
+    KASSERT(fdt->fds[2] != NULL);
+    KASSERT(fdt->fds[2]->index == 2);    
+
+
+    // let's write something to standard out
+    char content[] = "hello\n";
+
+    size_t written_bytes;
+
+    fd_write(fdt->fds[1], content, 7, &written_bytes);
+
+    KASSERT(written_bytes == 7);
+
+    // test if we get the correct filedescriptor
+
+    struct file_descriptor* stderr = get_fd(fdt, 2);
+
+    fd_write(stderr, content, 7, &written_bytes);
+
+
+    // create a new file descriptor for just a single text file
+    char filename[] = "/test.txt";
+    int fdID;
+    int error = fd_open(fdt, filename, O_RDWR | O_CREAT, (int*) &fdID);
+
+    (void) error;
+    kprintf("file error: %d\n", error);
+
+    struct file_descriptor* file = get_fd(fdt, fdID);
+
+    fd_write(file, content, 7, &written_bytes);
+
+    fd_read(file, content, 7, &written_bytes);
+
+    kprintf(content);    
+
+
+    (void) file;
+    
+    kprintf("\n****** done testing write *******\n");
+
+
+
+
+    return 0;
+
+}
+
+
+
+
+
+int test_file_table_copy(){
+
+
+    kprintf("\n****** testing file table copy  *******\n");
+
+    // create a new process
+    struct proc* p;
+    char name[] =  "test_fdt";
+    p = proc_create_runprogram(name);
+
+    // the file table should have 3 entries now
+    struct fd_table* fdt = p->p_fd_table;
+
+    char content[] = "hello\n";
+    size_t written_bytes;
+
+    // create a new file descriptor for just a single text file
+    char filename[] = "/test.txt";
+    int fdID;
+    int error = fd_open(fdt, filename, O_RDWR | O_CREAT, (int*) &fdID);
+
+    kprintf("file error: %d\n", error);
+
+    struct file_descriptor* file = get_fd(fdt, fdID);
+
+    fd_write(file, content, 7, &written_bytes);
+
+
+    // copy the file descriptor
+    struct file_descriptor* file_copy = fd_copy(file);
+
+    // try to write
+    fd_write(file_copy, content, 7, &written_bytes);
+
+    // close the "parent" fdt
+    fd_close(fdt, file);
+
+    // try to write again
+    fd_write(file_copy, content, 7, &written_bytes);
+
+    KASSERT(file_copy->offset > 7); // since we already wrote a couple of times
+
+
+    char console[] = "con:";
+    int temp_id;
+    // open and close 3 times
+    fd_open(fdt, console, O_RDONLY, &temp_id);
+    fd_close(fdt, fdt->fds[temp_id]);
+
+    fd_open(fdt, console, O_RDONLY, &temp_id);
+    fd_close(fdt, fdt->fds[temp_id]);
+    
+    fd_open(fdt, console, O_RDONLY, &temp_id);
+    fd_close(fdt, fdt->fds[temp_id]);
+
+
+    // copy the current file table
+    struct fd_table* fdt_copy = fd_table_copy(fdt, p);
+
+    // open two new files, they should have the same id
+
+    int old_fd_id, new_fd_id;
+
+    fd_open(fdt, console, O_RDONLY, &old_fd_id);
+    fd_open(fdt_copy, console, O_RDONLY, &new_fd_id);
+
+    kprintf("old id: %d, new id: %d\n", old_fd_id, new_fd_id);
+
+    KASSERT(old_fd_id == new_fd_id);
+
+
+    (void) file;
+    (void) file_copy;
+    
+    kprintf("\n****** testing file table copy *******\n");
+
+    return 0;
+
+}
+
+
+
+
+
+
 int asst2_tests(int nargs, char **args){
 
 	(void) nargs;
 	(void) args;
 
 	kprintf("starting tests for PID");
-	KASSERT(test_pid_in_use() == 0);
+	//KASSERT(test_pid_in_use() == 0);
 	// DO NOT CHANGE THE ORDER HERE!
 	
 	KASSERT(test_minimal_acquire_release_acquire_counter() == 0);
@@ -281,12 +437,27 @@ int asst2_tests(int nargs, char **args){
     
 	release_ids(10000,30000);
 
-
+    kprintf("starting tests for hash table \n");
 	test_synch_hashtable();
 
 
 	kprintf("starting tests for files ops \n");
 	test_fd_create_destroy();    
 	test_fd_table();
+    test_file_ops();
+    test_file_table_copy();
+
+
+    kprintf("\n\n");
+    kprintf("**************************** \n");
+    kprintf("**************************** \n");
+    kprintf("**************************** \n");
+    kprintf("*********         ********** \n");
+    kprintf("*********   OK    ********** \n");
+    kprintf("*********         ********** \n");
+    kprintf("**************************** \n");
+    kprintf("**************************** \n");
+    kprintf("**************************** \n");
+    kprintf("\n\n");
 	return 0;
 }

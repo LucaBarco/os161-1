@@ -22,6 +22,11 @@ int test_fd_create_destroy(void);
 
 int test_fd_table(void);
 
+
+int test_file_ops(void);
+
+int test_file_table_copy(void);
+
 int test_synch_hashtable(void);
 
 #endif
