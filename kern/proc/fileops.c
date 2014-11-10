@@ -261,9 +261,7 @@ int fd_write(struct file_descriptor* fd, char* kbuf, size_t buflen, size_t* writ
 	int res = 0;
 
 	// lock
-	lock_acquire(fd->fd_lock);
-
-	
+	lock_acquire(fd->fd_lock);	
 
 	struct iovec iov;
 	struct uio io;
@@ -285,10 +283,7 @@ int fd_write(struct file_descriptor* fd, char* kbuf, size_t buflen, size_t* writ
 	*written_bytes = (size_t) ((unsigned int) io.uio_offset) - ((unsigned int) old_offset );
 
 
-	// free the stuff
-	//kfree(&iov);
-	//kfree(&io);
-
+	
 	lock_release(fd->fd_lock);
 	return 0;
 };
