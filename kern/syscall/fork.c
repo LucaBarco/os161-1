@@ -28,7 +28,7 @@
 #include <pid.h>
 #include <syscall.h>
 #include <mips/trapframe.h>
-
+#include <fileops.h>
 
 
 /*
@@ -148,9 +148,13 @@ kprintf("FORK DEBUG: 4\n");
 
 kprintf("FORK DEBUG: 5\n");
 
-	// TODO
-	// Create file descriptor table for child process and copy content of parent file descriptor table into it.
-	// Create open file table for child and copy content of parent open file handle table into it. Remove files from the child open file table that are opened as writable in the parent list. 
+	// destroy new file table
+	fd_table_destroy(new_proc->p_fd_table);
+
+	// copy old filetable
+	new_proc->p_fd_table = fd_table_copy(curp->p_fd_table, new_proc);
+
+
 
 	// Copy the trapframe to the heap so it's available to the child
 	trapf = kmalloc(sizeof(*tf));
