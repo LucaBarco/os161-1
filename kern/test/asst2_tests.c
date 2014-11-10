@@ -14,7 +14,7 @@
 #include <fileops.h>
 #include <proc.h>
 #include <kern/fcntl.h>
-
+#include <vnode.h>
 
 
 
@@ -269,7 +269,7 @@ int test_synch_hashtable(){
 int test_file_ops(){
 
 
-    kprintf("\n****** testing read write *******\n");
+    kprintf("\n****** testing read  *******\n");
 
     // create a new process
     struct proc* p;
@@ -288,22 +288,41 @@ int test_file_ops(){
 
 
     // let's write something to standard out
-    char content[] = "hello";
+    char content[] = "hello\n";
 
     size_t written_bytes;
 
-    fd_write(fdt->fds[1], content, 5, &written_bytes);
+    fd_write(fdt->fds[1], content, 7, &written_bytes);
 
-    KASSERT(written_bytes == 5);
+    KASSERT(written_bytes == 7);
 
-    // can we read?
-    char read_content[10];
-    fd_read(fdt->fds[0], read_content, 10, &written_bytes);
+    // test if we get the correct filedescriptor
 
-    kprintf("\n\n");
-    fd_write(fdt->fds[1], read_content, 10, &written_bytes);
+    struct file_descriptor* stderr = get_fd(fdt, 2);
 
-    kprintf("\n****** done testing read write *******\n");
+    fd_write(stderr, content, 7, &written_bytes);
+
+
+    // create a new file descriptor for just a single text file
+    char filename[] = "/test.txt";
+    int fdID;
+    int error = fd_open(fdt, filename, O_RDWR | O_CREAT, (int*) &fdID);
+
+    (void) error;
+    kprintf("file error: %d\n", error);
+
+    struct file_descriptor* file = get_fd(fdt, fdID);
+
+    fd_write(file, content, 7, &written_bytes);
+
+    fd_read(file, content, 7, &written_bytes);
+
+    kprintf(content);    
+
+
+    (void) file;
+    
+    kprintf("\n****** done testing write *******\n");
 
     return 0;
 
