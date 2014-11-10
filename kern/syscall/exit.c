@@ -46,7 +46,7 @@ void sys_exit(int exitcode) {
 	struct thread* childt = NULL;
 
 	// lock process struct
-	spinlock_acquire(&childp->p_lock);
+	//spinlock_acquire(&childp->p_lock);
 
 	// remove join property of child processes
 	lock_acquire(&curp->p_childlist_lock);
@@ -56,19 +56,19 @@ void sys_exit(int exitcode) {
 			childp = (struct proc*)list_front(&curp->p_childlist);
 			if(childp == NULL)				// TODO make shure that this not happens
 			{
-				spinlock_release(&childp->p_lock);
+				//spinlock_release(&childp->p_lock);
 				lock_release(&curp->p_childlist_lock);
 				// TODO die
 			}
 
 			childp = (struct proc*)list_remove(&curp->p_childlist, (void*) childp, &proc_comparator);
-			spinlock_acquire(&childp->p_lock);
+			//spinlock_acquire(&childp->p_lock);
 
 
 			childt = threadarray_get(&childp->p_threads, 0);
 			if( childt == NULL)				// TODO make shure that this not happens
 			{
-				spinlock_release(&childp->p_lock);
+				//spinlock_release(&childp->p_lock);
 				lock_release(&curp->p_childlist_lock);
 				// TODO die
 			}
@@ -79,7 +79,7 @@ void sys_exit(int exitcode) {
 			sem_destroy(childt->t_join_sem_child);
 			sem_destroy(childt->t_join_sem_parent);
 
-			spinlock_release(&childp->p_lock);
+			//spinlock_release(&childp->p_lock);
 			curt->t_childs_to_join--;
 		}
 		
@@ -92,10 +92,10 @@ void sys_exit(int exitcode) {
 	// TODO cleanup process ressouces
 
 	// unlock process struct
-	spinlock_release(&childp->p_lock);
+	//spinlock_release(&childp->p_lock);
 
 	// exit thread should cleanup the thread and release waiting parent processes
-	thread_exit(exitcode);
+	//thread_exit(exitcode);
 }
 
 
