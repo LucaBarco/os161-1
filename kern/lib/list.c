@@ -74,6 +74,31 @@ list_push_back(struct list* lst, void* newval)
     return 0;
 }
 
+int
+list_push_front(struct list* lst, void* newval)
+{
+    KASSERT(lst != NULL);
+    KASSERT_LIST(lst);
+
+    struct listnode* newnode = listnode_create(newval);
+    if (newnode == NULL) {
+        return ENOMEM;
+    }
+    KASSERT_LISTNODE(newnode);
+
+    if (lst->size == 0) {
+        lst->tail = newnode;
+    } else {
+        KASSERT_LISTNODE(lst->head);
+        newnode->next = lst->head;
+    }
+    lst->head = newnode;
+
+    ++lst->size;
+    
+    return 0;
+}
+
 void
 list_pop_front(struct list* lst)
 {

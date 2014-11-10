@@ -10,6 +10,7 @@
 #include <vfs.h>
 #include <copyinout.h>
 #include <syscall.h>
+#include <queue.h>
 
 int execv(const char *program, char **args) {
     struct addrspace *new_as;
@@ -19,19 +20,38 @@ int execv(const char *program, char **args) {
 	int result;
     
     int i = 0;
-    char ** argv = NULL;
+    userptr_t argv = NULL;
     int argc = 0;
     //amount of memory left for arg strings
     int left = ARG_MAX;
     //length of a arg string
     int len = 0;
+    //temp for old userspace location of string
+    userptr_t oldptr;
+    //temp for old userspace char
+    char oldchar;
+    //stack that stores old userspace locations of strings
+    struct list * oldptr_stack;
+    //stack that stores new userspace locations of strings
+    struct list * newptr_stack;
     //kernel location of string
-    void * kstring;
+    char * kstring;
     //new userspace location of string
-    char * newstring;
+    userptr_t newstring;
+    
+	KASSERT(proc_getas() != NULL);
+    
+    char * progname = kmalloc(PATH_MAX);
+    size_t actual;
+    result = copyinstr((const_userptr_t) program, progname, PATH_MAX, &actual);
+    if(result) {
+        kfree(progname);
+        return result;
+    }
     
 	/* Open the file. */
-	result = vfs_open((char*) program, O_RDONLY, 0, &v);
+	result = vfs_open(progname, O_RDONLY, 0, &v);
+    kfree(progname);
 	if (result) {
 		return result;
 	}
@@ -44,7 +64,7 @@ int execv(const char *program, char **args) {
 	}
 
 	/* Switch to it and activate it. */
-	proc_setas(new_as);
+	old_as = proc_setas(new_as);
 	as_activate();
 
 	/* Load the executable. */
@@ -66,32 +86,46 @@ int execv(const char *program, char **args) {
 	}
     
     if(args != NULL) {
-        // count argc
+        //get the old userspace's arg string pointers
         proc_setas(old_as);
+        oldptr_stack = list_create();
+        newptr_stack = list_create();
         while(true) {
-            // make sure pointer is in userspace
-            if((userptr_t)(args+(sizeof(void*)*argc+1)) > (userptr_t)USERSPACETOP)
-                return EFAULT;
+            result = copyin((userptr_t) args+argc*sizeof(userptr_t), &oldptr, sizeof(userptr_t));
             
-            if(args[argc] == NULL)
+            if(result) {
+                list_destroy(oldptr_stack);
+                list_destroy(newptr_stack);
+                proc_setas(new_as);
+                as_deactivate();
+                proc_setas(old_as);
+                as_destroy(new_as);
+                return EFAULT;
+            }
+            
+            if(oldptr == NULL)
                 break;
+            
+            list_push_front(oldptr_stack, (void*)oldptr);
             
             argc++;
         }
         
-        // create argv
-        proc_setas(new_as);
-        stackptr -= (vaddr_t)(argc*sizeof(char *));
-        argv = (char **) stackptr;
-        
-        for(i = 0; i < argc; i++) {
+        for(i = argc-1; i >= 0; i--) {
             // switch back to old as
             proc_setas(old_as);
             
+            oldptr = (userptr_t) list_front(oldptr_stack);
+            list_pop_front(oldptr_stack);
+            
             // make sure string is valid and get length
-            for(len = 0;; len++) {
+            for(len = 1;; len++) {
                 // make sure next char is in userspace
-                if((userptr_t)(args[i]+(sizeof(char)*len+1)) > (userptr_t)USERSPACETOP) {
+                result = copyin((userptr_t) oldptr+len-1, &oldchar, 1);
+            
+                if(result) {
+                    list_destroy(oldptr_stack);
+                    list_destroy(newptr_stack);
                     proc_setas(new_as);
                     as_deactivate();
                     proc_setas(old_as);
@@ -99,11 +133,13 @@ int execv(const char *program, char **args) {
                     return EFAULT;
                 }
                 
-                if(args[i][len] == 0)
+                if(oldchar == 0)
                     break;
             }
             left -= len;
             if(left < 0) {
+                list_destroy(oldptr_stack);
+                list_destroy(newptr_stack);
                 proc_setas(new_as);
                 as_deactivate();
                 proc_setas(old_as);
@@ -114,6 +150,8 @@ int execv(const char *program, char **args) {
             // kmalloc for kernel string
             kstring = kmalloc(len);
             if(kstring == NULL) {
+                list_destroy(oldptr_stack);
+                list_destroy(newptr_stack);
                 proc_setas(new_as);
                 as_deactivate();
                 proc_setas(old_as);
@@ -123,7 +161,9 @@ int execv(const char *program, char **args) {
             
             //copyin the string
             result = copyin((userptr_t) args[i], kstring, len);
-            if(result != 0) {
+            if(result) {
+                list_destroy(oldptr_stack);
+                list_destroy(newptr_stack);
                 kfree(kstring);
                 proc_setas(new_as);
                 as_deactivate();
@@ -135,31 +175,52 @@ int execv(const char *program, char **args) {
             // switch back to new as
             proc_setas(new_as);
             
-            //malloc for the string in the new address space
-            stackptr -= (vaddr_t)len;
-            newstring = (char*) stackptr;
-            if(newstring == NULL) {
-                kfree(kstring);
-                as_deactivate();
-                proc_setas(old_as);
-                as_destroy(new_as);
-                return ENOMEM;
-            }
+            //allocate word-aligned space in the new stack
+            stackptr -= (vaddr_t)(len/sizeof(void*)*sizeof(void*)+(len%sizeof(void*) == 0 ? 0 : sizeof(void*)));
+            newstring = (userptr_t) stackptr;
             
             // copyout, and kfree
-            result = copyout(kstring, (userptr_t) newstring, len);
+            result = copyout(kstring, newstring, len);
             kfree(kstring);
-            if(result != 0) {
+            if(result) {
+                list_destroy(oldptr_stack);
+                list_destroy(newptr_stack);
                 as_deactivate();
                 proc_setas(old_as);
                 as_destroy(new_as);
                 return result;
             }
             
-            // put copyout location in argv
-            argv[i] = newstring;
+            // put copyout location at end of list to be written later
+            list_push_front(newptr_stack, newstring);
         }
+        list_destroy(oldptr_stack);
+        
+        // create argv in new userspace
+        proc_setas(new_as);
+        stackptr -= (vaddr_t)((argc+1)*sizeof(char *));
+        argv = (userptr_t) stackptr;
+        
+        //copyout new arg string ptr locations into the new argv
+        for(i = 0; i < argc; i++) {
+            newstring = list_front(newptr_stack);
+            list_pop_front(newptr_stack);
+            result = copyout(&newstring, argv+i*sizeof(userptr_t), sizeof(userptr_t));
+            if(result) {
+                list_destroy(newptr_stack);
+                as_deactivate();
+                proc_setas(old_as);
+                as_destroy(new_as);
+                return result;
+            }
+        }
+        //write null at end of argv
+        newstring = NULL;
+        copyout(&newstring, argv+argc*sizeof(userptr_t), sizeof(userptr_t));
+        
+        list_destroy(newptr_stack);
     }
+    
 
 	/* Destroy the old address space. */
     proc_setas(old_as);

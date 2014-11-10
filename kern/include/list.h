@@ -53,6 +53,7 @@ struct list {
 
 struct list* list_create(void);
 int list_push_back(struct list* lst, void* newval);
+int list_push_front(struct list* lst, void* newval);
 void list_pop_front(struct list* lst);
 void* list_front(struct list* lst);
 void* list_find(struct list* lst, void* query_val, int(*comparator)(void* left, void* right));
