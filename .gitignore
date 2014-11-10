@@ -12,3 +12,6 @@ push.sh
 sys161.conf
 LHD0.img
 LHD1.img
+
+
+userland/testbin/*/build

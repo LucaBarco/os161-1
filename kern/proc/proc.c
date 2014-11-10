@@ -91,17 +91,32 @@ proc_create(const char *name)
 	// we can not do this for the kernel process since VFS is not yet bootstrapped	
 	
 	if(kproc!=NULL){
-		struct file_descriptor*  fd_0;
-		struct file_descriptor*  fd_1;
-		struct file_descriptor*  fd_2;
 
-		char console[] = "con:";
+		
+		int fdi_0, fdi_1, fdi_2;
 
-		fd_open(proc->p_fd_table, console, O_RDONLY, fd_0);
-		fd_open(proc->p_fd_table, console, O_WRONLY, fd_1);
-		fd_open(proc->p_fd_table, console, O_WRONLY, fd_2);
+		int temp_res = 0;
 
-		KASSERT(fd_2->index ==2);
+		char* console_0 =  NULL;
+		console_0 = kstrdup("con:");
+
+		char* console_1 =  NULL;
+		console_1 = kstrdup("con:");
+
+		char* console_2 =  NULL;
+		console_2 = kstrdup("con:");
+
+		
+		temp_res = fd_open(proc->p_fd_table, console_0, O_RDONLY, &fdi_0);
+		KASSERT(temp_res == 0); 
+
+		temp_res = fd_open(proc->p_fd_table, console_1, O_WRONLY, &fdi_1);
+		KASSERT(temp_res == 0);
+
+		temp_res = fd_open(proc->p_fd_table, console_2, O_WRONLY, &fdi_2);
+		KASSERT(temp_res == 0);
+
+		KASSERT(fdi_2 ==2);
 	}	
 
 	

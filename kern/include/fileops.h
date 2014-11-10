@@ -40,6 +40,9 @@ struct file_descriptor{
 // creates a file descriptor. return null if not successfull
 struct file_descriptor* fd_create(void);
 
+// copies a file descriptor and increases the refcount
+struct file_descriptor* fd_copy(struct file_descriptor* fd);
+
 
 // destroys a given file descriptor
 void fd_destroy(struct file_descriptor* fd);
@@ -52,32 +55,31 @@ struct fd_table{
 	// the process of the file_table
 	struct proc* proc;
 
-	// the hashtable which points from int -> file_descriptor
-	struct hashtable* ht;
-
 	// dummy impl with indexes
 	struct file_descriptor* fds[__OPEN_MAX];
 	
 	// the lock
 	struct lock* lock;
 
-	// a list of all open file descriptors - we need this on copy
-	struct list* list;
-
 	// the counter for file_descriptors
 	int counter;
 
 	// a queue of free file_descriptors TODO
-
+	struct queue *fid_queue;
 };
+
 
 // creates a new file descriptor table for the given process - does not attach the table to the process
 struct fd_table* fd_table_create(struct proc*);
+
+struct fd_table* fd_table_copy(struct fd_table* fdt, struct proc* new_proc);
 
 void fd_table_destroy(struct fd_table* fdt);
 
 // get a new fd index, returns -1 if full
 int get_new_fd_index(struct fd_table* fdt);
+
+void release_fid(struct fd_table* fdt, int fid);
 
 // add a file descriptor to the table
 struct file_descriptor* add_file_descriptor(struct fd_table* fdt, char* filename, int flags);
@@ -89,7 +91,7 @@ struct file_descriptor* add_file_descriptor(struct fd_table* fdt, char* filename
 
 
 //return an error code. the id of the file_descriptor can be retrieved via the file_descriptor pointer
-int fd_open(struct fd_table* fdt, char* filename, int flags, struct file_descriptor* fd);
+int fd_open(struct fd_table* fdt, char* filename, int flags, int* fd_id);
 
 
 int fd_read(struct file_descriptor* fd, char *kbuf, size_t buflen, size_t* read_bytes);
