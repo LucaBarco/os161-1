@@ -16,5 +16,10 @@ void release_process_id(int i);
 // initializes the PID system 
 void pid_bootstrap(void);
 
+// cleanup the PID system 
+void pid_cleanup(void);
+
+// check if pid is in use
+int pidUsed(int pid);
 
 #endif

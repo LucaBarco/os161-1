@@ -27,50 +27,75 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _SYSCALL_H_
-#define _SYSCALL_H_
-
-
-#include <cdefs.h> /* for __DEAD */
-struct trapframe; /* from <machine/trapframe.h> */
-
 /*
- * The system call dispatcher.
+ * filetest.c
+ *
+ * 	Tests the filesystem by opening, writing to and reading from a
+ * 	user specified file.
+ *
+ * This should run (on SFS) even before the file system assignment is started.
+ * It should also continue to work once said assignment is complete.
+ * It will not run fully on emufs, because emufs does not support remove().
  */
 
-void syscall(struct trapframe *tf);
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <err.h>
 
-/*
- * Support functions.
- */
+int
+main(int argc, char *argv[])
+{
+	(void) argc;
+	(void) argv;
 
-/* Helper for fork(). You write this. */
-//void enter_forked_process(struct trapframe *tf);
-//static int enter_forked_process(void *tf,  unsigned long n);
+	static char writebuf[40] = "Twiddle dee dee, Twiddle dum dum.......\n";
+	static char readbuf[41];
 
-/* Enter user mode. Does not return. */
-__DEAD void enter_new_process(int argc, userptr_t argv, userptr_t env,
-		       vaddr_t stackptr, vaddr_t entrypoint);
+	int fd, rv;
 
-/*
- * Prototypes for IN-KERNEL entry points for system call implementations.
- */
-
-//int sys_fork(void);
-int sys_fork(struct trapframe *tf, int32_t *ret);
-int sys_waitpid(int pid, int *status, int options, int *ret);
-void sys_exit(int exitcode);
-
-int32_t sys_getpid(void);
-int sys_reboot(int code);
-int sys___time(userptr_t user_seconds, userptr_t user_nanoseconds);
-int execv(const char *progam, char **args);
+	static char filename[] = "/a2a_filetest.txt";
+	
+	fd = open(filename, O_WRONLY|O_CREAT|O_TRUNC, 0664);
+	if (fd<0) {
+		err(1, "%s: open for write", filename);
+	}
 
 
-// fileIO
-int sys_open(struct trapframe *tf, int32_t *ret);
-int sys_read(struct trapframe *tf, int32_t *ret);
-int sys_write(struct trapframe *tf, int32_t *ret);
-int sys_close(struct trapframe *tf, int32_t *ret);
+	rv = write(fd, writebuf, 40);
+	if (rv<0) {
+		err(1, "%s: write", filename);
+	}
 
-#endif /* _SYSCALL_H_ */
+	rv = close(fd);
+	if (rv<0) {
+		err(1, "%s: close (1st time)", filename);
+	}
+
+	fd = open(filename, O_RDONLY);
+	if (fd<0) {
+		err(1, "%s: open for read", filename);
+	}
+
+	rv = read(fd, readbuf, 40);
+	if (rv<0) {
+		err(1, "%s: read", argv[1]);
+	}
+	rv = close(fd);
+	if (rv<0) {
+		err(1, "%s: close (2nd time)", filename);
+	}
+	/* ensure null termination */
+	readbuf[40] = 0;
+
+	if (strcmp(readbuf, writebuf)) {
+		errx(1, "Buffer data mismatch!");
+	}
+
+	//rv = remove(argv[1]);
+	//if (rv<0) {
+//		err(1, "%s: remove", filename);
+//	}
+	printf("Passed filetest.\n");
+	return 0;
+}

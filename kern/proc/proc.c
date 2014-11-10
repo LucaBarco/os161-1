@@ -49,6 +49,9 @@
 #include <addrspace.h>
 #include <vnode.h>
 #include <pid.h>
+#include <synch_hashtable.h>
+#include <fileops.h>
+#include <kern/fcntl.h>
 
 
 /*
@@ -75,6 +78,49 @@ proc_create(const char *name)
 		return NULL;
 	}
 
+
+	/* File Descriptor Table */
+	proc->p_fd_table = fd_table_create(proc);
+	if(proc->p_fd_table == NULL){
+		kfree(proc->p_name);
+		kfree(proc);
+		return NULL;
+	}
+
+	// add file descriptors for stdin, stdoud, stderr
+	// we can not do this for the kernel process since VFS is not yet bootstrapped	
+	
+	if(kproc!=NULL){
+
+		
+		int fdi_0, fdi_1, fdi_2;
+
+		int temp_res = 0;
+
+		char* console_0 =  NULL;
+		console_0 = kstrdup("con:");
+
+		char* console_1 =  NULL;
+		console_1 = kstrdup("con:");
+
+		char* console_2 =  NULL;
+		console_2 = kstrdup("con:");
+
+		
+		temp_res = fd_open(proc->p_fd_table, console_0, O_RDONLY, &fdi_0);
+		KASSERT(temp_res == 0); 
+
+		temp_res = fd_open(proc->p_fd_table, console_1, O_WRONLY, &fdi_1);
+		KASSERT(temp_res == 0);
+
+		temp_res = fd_open(proc->p_fd_table, console_2, O_WRONLY, &fdi_2);
+		KASSERT(temp_res == 0);
+
+		KASSERT(fdi_2 ==2);
+	}	
+
+	
+
 	threadarray_init(&proc->p_threads);
 	spinlock_init(&proc->p_lock);
 
@@ -94,6 +140,8 @@ proc_create(const char *name)
 	proc->p_parent = NULL;
 	proc->p_returnvalue = 0;
 	proc->p_childlist_lock = *lock_create(name);
+
+	
 
 	return proc;
 }
@@ -187,6 +235,7 @@ proc_destroy(struct proc *proc)
 	//proclist_cleanup(&proc->p_childlist);
 	list_destroy(&proc->p_childlist);
 	lock_destroy(&proc->p_childlist_lock);
+	fd_table_destroy(proc->p_fd_table);
 
 	kfree(proc->p_name);
 	kfree(proc);

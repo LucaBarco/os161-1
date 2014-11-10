@@ -114,6 +114,18 @@ hashtabletest(int nargs, char **args)
     KASSERT(hashtable_isempty(newhashtable));
     hashtable_assertvalid(newhashtable);
 
+    /* test for bug -- incorrect behavior when adding multiple
+     * values using the same key */
+    KASSERT(hashtable_add(newhashtable, key1, 1, &val1) == 0);
+    KASSERT(hashtable_add(newhashtable, key1, 1, &val2) == 0);
+    KASSERT(hashtable_getsize(newhashtable) == 1);
+    KASSERT(!hashtable_isempty(newhashtable));
+    hashtable_assertvalid(newhashtable);
+    removed_val2 = *(int*)hashtable_remove(newhashtable, key1, 1);
+    KASSERT(removed_val2 == val2);
+    KASSERT(hashtable_isempty(newhashtable));
+    hashtable_assertvalid(newhashtable);
+
     /* Destroys hashtable. */
     hashtable_destroy(newhashtable);
 
