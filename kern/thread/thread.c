@@ -609,6 +609,13 @@ thread_switch(threadstate_t newstate, struct wchan *wc, struct spinlock *lk)
 
 	cur = curthread;
 
+
+	if(newstate== S_ZOMBIE){
+
+		int i = 5;
+		(void) i;
+	}
+
 	/*
 	 * If we're idle, return without doing anything. This happens
 	 * when the timer interrupt interrupts the idle loop.
@@ -857,7 +864,7 @@ thread_exit(int ret)
 	thread_checkstack(cur);
 
 	/* Interrupts off on this processor */
-        splhigh();
+    splhigh();
 
 	thread_switch(S_ZOMBIE, NULL, NULL);
 

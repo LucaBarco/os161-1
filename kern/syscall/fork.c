@@ -91,7 +91,7 @@ kprintf("FORK DEBUG: 0\n");
 	char name[16];
 	int result;
 
-	spinlock_acquire(&curp->p_lock);
+	//spinlock_acquire(&curp->p_lock);
 
 	// check if there are already too many processes on the system
 	if(false)// TODO
@@ -161,13 +161,16 @@ kprintf("FORK DEBUG: 5\n");
 	memcpy(tf,trapf,sizeof(*tf));
 
 kprintf("FORK DEBUG: 6\n");
-
+	/*
 	result = thread_fork(name, &new_thread, new_proc, &enter_forked_process, trapf, 0);
 	if (result) {
 		kfree(trapf);
 		proc_destroy(new_proc);
 		return result; 
 	}
+	*/
+	(void) new_thread;
+	(void) enter_forked_process;
 
 kprintf("FORK DEBUG: 7\n");
 
@@ -180,8 +183,8 @@ kprintf("FORK DEBUG: 7\n");
 kprintf("FORK DEBUG: 8\n");
 
 	/* Thread subsystem fields */
-	list_push_back(&curp->p_childlist, (void*)new_proc);
-	spinlock_release(&curp->p_lock);
+	//list_push_back(&curp->p_childlist, (void*)new_proc);
+	//spinlock_release(&curp->p_lock);
 	
 	return 0;
 }
