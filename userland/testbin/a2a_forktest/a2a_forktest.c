@@ -49,15 +49,15 @@ main(int argc, char *argv[])
 	(void) argc;
 	(void) argv;
 
-	printf("Starting Mini Fork Test.\n");
+	printf("A\n");
 
 	int i = getpid();
 	printf("pid %d \n", i);
 
-
+	int j = fork();
 	
+	printf("forked: %d \n",j);
 
-
-	printf("Ende Mini Fork Test\n");
+	printf("B\n");
 	return 0;
 }
