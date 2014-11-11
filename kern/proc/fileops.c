@@ -277,6 +277,9 @@ int fd_open(struct fd_table* fdt, char* filename, int flags, int* fd_index){
 	int res = vfs_open(filename_copy, flags, 0, &mvnode);
 	kfree(filename_copy);
 
+    //recopy string
+    filename_copy = kstrdup(filename);
+    
 	// see if this worked
 	if(res){
 		return res;
@@ -284,16 +287,15 @@ int fd_open(struct fd_table* fdt, char* filename, int flags, int* fd_index){
 
 	// create the file descriptor
 	struct file_descriptor* fd_temp = add_file_descriptor(fdt, filename_copy, flags);
-
-	// return its id
-	*fd_index = fd_temp->index;
-	
-
+	kfree(filename_copy);
 
 	if(fd_temp==NULL){ // probably too many open files.
 		vfs_close(mvnode);
 		return EMFILE;
 	}
+
+	// return its id
+	*fd_index = fd_temp->index;
 
 	// add the vnode to the file descriptor
 	fd_temp->vnode = mvnode;

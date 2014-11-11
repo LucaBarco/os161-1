@@ -68,8 +68,8 @@ struct proc {
 
 	/* add more material here as needed */
 	/* ASST2 */
-	struct list p_childlist; /* list with all child processes */
-	struct lock p_childlist_lock; /* lock for child process list */
+	struct list* p_childlist; /* list with all child processes */
+	struct lock* p_childlist_lock; /* lock for child process list */
 	struct proc* p_parent;		/* parent process if not exists NULL */
 	int p_returnvalue;		/* in case of waitpid to store return value */
 

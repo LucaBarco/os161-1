@@ -58,34 +58,34 @@ kprintf("DEAD THROUGH WAITPID!\n");
 		return EINVAL;
 	}
 
-	lock_acquire(&curp->p_childlist_lock);
-	childp = (struct proc*)list_find(&curp->p_childlist, (void*) &pid, &proc_comparator);
+	lock_acquire(curp->p_childlist_lock);
+	childp = (struct proc*)list_find(curp->p_childlist, (void*) &pid, &proc_comparator);
 	
 
 	// check if pid argument named a process that was not a child of the current process
 	if(childp == NULL)
 	{
-		lock_release(&curp->p_childlist_lock);
+		lock_release(curp->p_childlist_lock);
 		return ECHILD;
 	}
 
 	childt = threadarray_get(&childp->p_threads, 0);
 	if( childt == NULL)
 	{
-		lock_release(&curp->p_childlist_lock);
+		lock_release(curp->p_childlist_lock);
 		return -1;
 	}
 
 	result = thread_join(childt, &childreturn);
 	if(result)
 	{
-		lock_release(&curp->p_childlist_lock);
+		lock_release(curp->p_childlist_lock);
 		return result;
 	}
 
 	memcpy(ret, &childp->PID, sizeof(int));
 
-	lock_release(&curp->p_childlist_lock);
+	lock_release(curp->p_childlist_lock);
 kprintf("ALIVE THROUGH WAITPID!\n");
 	return 0;
 }

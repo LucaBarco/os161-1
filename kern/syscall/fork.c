@@ -188,7 +188,7 @@ kprintf("FORK START!\n");
 //kprintf("FORK DEBUG: 8\n");
 
 	/* Thread subsystem fields */
-	list_push_back(&curp->p_childlist, (void*)new_proc);
+	list_push_back(curp->p_childlist, (void*)new_proc);
 	//spinlock_release(&curp->p_lock);
 kprintf("FORK END!\n");
 	return 0;

@@ -8,8 +8,6 @@
 #include <current.h>
 #include <syscall.h>
 
-
-
 /*
 --- exit
 Does process has child processes? (!empty(child_process_list))
@@ -39,15 +37,15 @@ kprintf("DEAD THROUGH EXIT!\n");
 	//spinlock_acquire(&childp->p_lock);
 
 	// remove join property of child processes
-	lock_acquire(&curp->p_childlist_lock);
-	if(list_isempty(&curp->p_childlist) == 0){
-		while(list_isempty(&curp->p_childlist) == 0)
+	lock_acquire(curp->p_childlist_lock);
+	if(list_isempty(curp->p_childlist) == 0){
+		while(list_isempty(curp->p_childlist) == 0)
 		{
-			childp = (struct proc*)list_remove_front(&curp->p_childlist);
+			childp = (struct proc*)list_remove_front(curp->p_childlist);
 			if(childp == NULL)				// TODO make shure that this not happens
 			{
 				//spinlock_release(&childp->p_lock);
-				lock_release(&curp->p_childlist_lock);
+				lock_release(curp->p_childlist_lock);
 				// TODO die
 			}
 
@@ -58,7 +56,7 @@ kprintf("DEAD THROUGH EXIT!\n");
 			if( childt == NULL)				// TODO make shure that this not happens
 			{
 				//spinlock_release(&childp->p_lock);
-				lock_release(&curp->p_childlist_lock);
+				lock_release(curp->p_childlist_lock);
 				// TODO die
 			}
 
@@ -73,7 +71,7 @@ kprintf("DEAD THROUGH EXIT!\n");
 		}
 		
 	}
-	lock_release(&curp->p_childlist_lock);
+	lock_release(curp->p_childlist_lock);
 
 	
 
