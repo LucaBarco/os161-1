@@ -43,26 +43,29 @@ static int enter_forked_process(void *tf,  unsigned long n)
 {
 	(void)n;
 
-	kprintf("FORK DEBUG: enter forked process\n");
-	
-	// copy trapframe
-	struct trapframe trapf = (*((struct trapframe *) tf));// = *((struct trapframe*)tf);
-	//trapf = kmalloc(sizeof(struct trapframe));
-	//memcpy(trapf, tf, sizeof(struct trapframe));
+
+	struct trapframe* tf2 = (struct trapframe *) tf;
+
+//	kprintf("FORK DEBUG: enter forked process\n");
+
 
 	// Set the trapframe values
 	// set returnvalue 0
-	trapf.tf_v0 = 0;
+	tf2->tf_v0 = 0;
 	// signal no error
-	trapf.tf_a3 = 0;
+	tf2->tf_a3 = 0;
 	// increase pc such that systemcall is not called again
-	trapf.tf_epc += 4;
+	tf2->tf_epc += 4;
+
+
+	//memcpy(curthread->t_stack +16, tf2, (sizeof(struct trapframe)));
+	//as_activate();
 
 	// free allocated memory
-	kfree(tf);
+	//kfree(tf);
 
 	// change back to usermode
-	mips_usermode(&trapf);
+	mips_usermode(tf2);
 
 	// Panic if user mode returns // should not happen
 	panic("Returned from user mode!");
@@ -80,7 +83,7 @@ processes each observe the correct return value
 (that is, 0 for the child and the newly created pid for the parent).
 */
 int sys_fork(struct trapframe *tf, int32_t *ret){
-kprintf("FORK DEBUG: 0\n");
+//kprintf("FORK DEBUG: 0\n");
 	int new_pid = 0;
 	struct addrspace *new_as = NULL;
 	struct proc* new_proc = NULL;
@@ -99,7 +102,7 @@ kprintf("FORK DEBUG: 0\n");
 		return ENPROC;
 	}
 
-kprintf("FORK DEBUG: 1\n");
+//kprintf("FORK DEBUG: 1\n");
 
 	// check if current user already has too many processes
 	if(false)// TODO
@@ -107,15 +110,15 @@ kprintf("FORK DEBUG: 1\n");
 		return EMPROC;
 	}
 
-kprintf("FORK DEBUG: 2\n");
+//kprintf("FORK DEBUG: 2\n");
 
 	// generate process name
-      	result = snprintf(name, sizeof(name), "child_%d", new_pid);
+    result = snprintf(name, sizeof(name), "child_%d", new_pid);
 	if (result < 0 ) {
 		return result; 
 	}
 
-kprintf("FORK DEBUG: 3\n");
+///kprintf("FORK DEBUG: 3\n");
 
 	// create child process
 	new_proc = proc_create_runprogram(name);
@@ -133,7 +136,7 @@ kprintf("FORK DEBUG: 3\n");
 	}
 	*/
 	
-kprintf("FORK DEBUG: 4\n");
+//kprintf("FORK DEBUG: 4\n");
 
 	memcpy(ret, &new_pid, sizeof(int));
 
@@ -146,7 +149,7 @@ kprintf("FORK DEBUG: 4\n");
 	new_proc->p_addrspace = new_as;
 
 
-kprintf("FORK DEBUG: 5\n");
+//kprintf("FORK DEBUG: 5\n");
 
 	// destroy new file table
 	fd_table_destroy(new_proc->p_fd_table);
@@ -158,32 +161,33 @@ kprintf("FORK DEBUG: 5\n");
 
 	// Copy the trapframe to the heap so it's available to the child
 	trapf = kmalloc(sizeof(*tf));
-	memcpy(tf,trapf,sizeof(*tf));
+	//memcpy(tf,trapf,sizeof(*tf));
+	memcpy(trapf,tf,sizeof(*tf));
 
-kprintf("FORK DEBUG: 6\n");
-	/*
+//kprintf("FORK DEBUG: 6\n");
+	
 	result = thread_fork(name, &new_thread, new_proc, &enter_forked_process, trapf, 0);
 	if (result) {
 		kfree(trapf);
 		proc_destroy(new_proc);
 		return result; 
 	}
-	*/
-	(void) new_thread;
-	(void) enter_forked_process;
+	
+	
 
-kprintf("FORK DEBUG: 7\n");
+//kprintf("FORK DEBUG: 7\n");
 
-	/* we don't need to lock proc->p_lock as we have the only reference */
+	/* we don't need to lock proc->p_lock as we have the only reference 
 	if (new_proc->p_cwd != NULL) {
 		VOP_INCREF(curp->p_cwd);
 		new_proc->p_cwd = curp->p_cwd;
 	}
+	*/
 	
-kprintf("FORK DEBUG: 8\n");
+//kprintf("FORK DEBUG: 8\n");
 
 	/* Thread subsystem fields */
-	//list_push_back(&curp->p_childlist, (void*)new_proc);
+	list_push_back(&curp->p_childlist, (void*)new_proc);
 	//spinlock_release(&curp->p_lock);
 	
 	return 0;

@@ -138,9 +138,9 @@ syscall(struct trapframe *tf)
 
 	    /* Add stuff here */
 	    case SYS_fork:
-		//err = sys_fork(tf, &retval);
-		err = 0;
-		retval = 1000;
+		err = sys_fork(tf, &retval);
+		
+		//retval = 1000;
 		break;
 
 	    case SYS_waitpid:
