@@ -36,15 +36,12 @@ int get_new_process_id(){
 
 	lock_acquire(l);
 
-
 	// see if we can recycle an ID (we do this first because otherwise we will get a huge queue of old IDs)
 	if (!queue_isempty(PID_queue)){
 		new_id = (int) queue_front(PID_queue);
 		// remove that item from the queue
 		queue_pop(PID_queue);
-
 	}else{
-
 		// otherwise, see if we can increment the PID counter
 		if(PID_counter < __PID_MAX){
 			// we can increment
@@ -55,12 +52,13 @@ int get_new_process_id(){
 		} // else, we will just return new_id which should be -1
 	}
 
-	
+
 	if(new_id >= 0){
 		int ret = list_push_back(lst_usedPIDs, (void*) &new_id);
-		if(ret)
+		if(ret){
 			lock_release(l);
 			return ret;
+		}
 	}
 
 
@@ -78,7 +76,7 @@ void release_process_id(int i){
 	queue_push(PID_queue, (void*) i);
 
 	// remove pid from used list
-	list_remove(lst_usedPIDs, (void*) &i, &int_comparator);
+	//list_remove(lst_usedPIDs, (void*) &i, &int_comparator);
 	//int *ret = *(int*)list_remove(lst_usedPIDs, (void*) i, &int_comparator);		//TODO change return to check pass fail
 	//if(res == NULL || *ret != i)		
 	//	return ret;
