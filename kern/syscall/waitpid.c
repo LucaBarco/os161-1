@@ -32,7 +32,7 @@ Clean up child process ressources (free allocated space and pid)
 Return child pid
 */
 int sys_waitpid(int pid, int *status, int options, int *ret) {
-
+kprintf("DEAD THROUGH WAITPID!\n");
 	struct thread* curt = curthread;
 	struct thread* childt;
 	struct proc* curp = curt->t_proc;
@@ -46,7 +46,7 @@ int sys_waitpid(int pid, int *status, int options, int *ret) {
 		return ESRCH;
 	}
 
-	// check if status is invalid
+	// check if status is invalid		// TODO check if i understood it right
 	if(status == NULL)
 	{
 		return EFAULT;
@@ -86,7 +86,7 @@ int sys_waitpid(int pid, int *status, int options, int *ret) {
 	memcpy(ret, &childp->PID, sizeof(int));
 
 	lock_release(&curp->p_childlist_lock);
-
+kprintf("ALIVE THROUGH WAITPID!\n");
 	return 0;
 }
 

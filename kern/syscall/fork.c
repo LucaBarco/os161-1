@@ -83,6 +83,7 @@ processes each observe the correct return value
 (that is, 0 for the child and the newly created pid for the parent).
 */
 int sys_fork(struct trapframe *tf, int32_t *ret){
+kprintf("DEAD THROUGH FORK!\n");
 //kprintf("FORK DEBUG: 0\n");
 	int new_pid = 0;
 	struct addrspace *new_as = NULL;
@@ -189,6 +190,6 @@ int sys_fork(struct trapframe *tf, int32_t *ret){
 	/* Thread subsystem fields */
 	list_push_back(&curp->p_childlist, (void*)new_proc);
 	//spinlock_release(&curp->p_lock);
-	
+kprintf("ALIVE THROUGH FORK!\n");
 	return 0;
 }
