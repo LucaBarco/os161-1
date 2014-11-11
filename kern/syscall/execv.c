@@ -87,7 +87,9 @@ int execv(const char *program, char **args) {
     
     if(args != NULL) {
         //get the old userspace's arg string pointers
+        as_deactivate();
         proc_setas(old_as);
+        as_activate();
         oldptr_stack = list_create();
         newptr_stack = list_create();
         while(true) {
@@ -99,6 +101,7 @@ int execv(const char *program, char **args) {
                 proc_setas(new_as);
                 as_deactivate();
                 proc_setas(old_as);
+                as_activate();
                 as_destroy(new_as);
                 return EFAULT;
             }
@@ -113,7 +116,9 @@ int execv(const char *program, char **args) {
         
         for(i = argc-1; i >= 0; i--) {
             // switch back to old as
+            as_deactivate();
             proc_setas(old_as);
+            as_activate();
             
             oldptr = (userptr_t) list_front(oldptr_stack);
             list_pop_front(oldptr_stack);
@@ -129,6 +134,7 @@ int execv(const char *program, char **args) {
                     proc_setas(new_as);
                     as_deactivate();
                     proc_setas(old_as);
+                    as_activate();
                     as_destroy(new_as);
                     return EFAULT;
                 }
@@ -143,6 +149,7 @@ int execv(const char *program, char **args) {
                 proc_setas(new_as);
                 as_deactivate();
                 proc_setas(old_as);
+                as_activate();
                 as_destroy(new_as);
                 return E2BIG;
             }
@@ -155,6 +162,7 @@ int execv(const char *program, char **args) {
                 proc_setas(new_as);
                 as_deactivate();
                 proc_setas(old_as);
+                as_activate();
                 as_destroy(new_as);
                 return ENOMEM;
             }
@@ -168,12 +176,14 @@ int execv(const char *program, char **args) {
                 proc_setas(new_as);
                 as_deactivate();
                 proc_setas(old_as);
+                as_activate();
                 as_destroy(new_as);
                 return result;
             }
             
             // switch back to new as
             proc_setas(new_as);
+            as_activate();
             
             //allocate word-aligned space in the new stack
             stackptr -= (vaddr_t)(len/sizeof(void*)*sizeof(void*)+(len%sizeof(void*) == 0 ? 0 : sizeof(void*)));
@@ -187,6 +197,7 @@ int execv(const char *program, char **args) {
                 list_destroy(newptr_stack);
                 as_deactivate();
                 proc_setas(old_as);
+                as_activate();
                 as_destroy(new_as);
                 return result;
             }
@@ -198,6 +209,7 @@ int execv(const char *program, char **args) {
         
         // create argv in new userspace
         proc_setas(new_as);
+        as_activate();
         stackptr -= (vaddr_t)((argc+1)*sizeof(char *));
         argv = (userptr_t) stackptr;
         
@@ -210,6 +222,7 @@ int execv(const char *program, char **args) {
                 list_destroy(newptr_stack);
                 as_deactivate();
                 proc_setas(old_as);
+                as_activate();
                 as_destroy(new_as);
                 return result;
             }
@@ -226,6 +239,7 @@ int execv(const char *program, char **args) {
     proc_setas(old_as);
     as_deactivate();
     proc_setas(new_as);
+    as_activate();
 	as_destroy(old_as);
 
 	/* Warp to user mode. */

@@ -44,18 +44,18 @@ static int enter_forked_process(void *tf,  unsigned long n)
 	(void)n;
 
 
-	struct trapframe* tf2 = (struct trapframe *) tf;
+	struct trapframe tf2 = *(struct trapframe *) tf;
 
 //	kprintf("FORK DEBUG: enter forked process\n");
 
 
 	// Set the trapframe values
 	// set returnvalue 0
-	tf2->tf_v0 = 0;
+	tf2.tf_v0 = 0;
 	// signal no error
-	tf2->tf_a3 = 0;
+	tf2.tf_a3 = 0;
 	// increase pc such that systemcall is not called again
-	tf2->tf_epc += 4;
+	tf2.tf_epc += 4;
 
 
 	//memcpy(curthread->t_stack +16, tf2, (sizeof(struct trapframe)));
@@ -65,7 +65,7 @@ static int enter_forked_process(void *tf,  unsigned long n)
 	//kfree(tf);
 
 	// change back to usermode
-	mips_usermode(tf2);
+	mips_usermode(&tf2);
 
 	// Panic if user mode returns // should not happen
 	panic("Returned from user mode!");
