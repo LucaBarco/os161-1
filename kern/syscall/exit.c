@@ -95,7 +95,7 @@ void sys_exit(int exitcode) {
 	//spinlock_release(&childp->p_lock);
 
 	// exit thread should cleanup the thread and release waiting parent processes
-	//thread_exit(exitcode);
+	thread_exit(exitcode);
 }
 
 
