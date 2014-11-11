@@ -9,6 +9,7 @@
  *                          Returns NULL on error.
  *      list_push_back    - Append a new element to the back of the list.
  *      list_pop_front    - Removes the next element from the front of the list
+ *	list_remove_front - Removes the next element from the front of the list and returns it
  *      list_front        - Returns the next element from the front of the list.
  *                          Does not remove the element from the list.
  *                          Returns NULL if the list is empty.
@@ -55,6 +56,7 @@ struct list* list_create(void);
 int list_push_back(struct list* lst, void* newval);
 int list_push_front(struct list* lst, void* newval);
 void list_pop_front(struct list* lst);
+void* list_remove_front(struct list* lst);
 void* list_front(struct list* lst);
 void* list_find(struct list* lst, void* query_val, int(*comparator)(void* left, void* right));
 void* list_remove(struct list* lst, void* query_val, int(*comparator)(void* left, void* right));

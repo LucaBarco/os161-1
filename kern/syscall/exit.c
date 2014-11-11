@@ -9,16 +9,6 @@
 #include <syscall.h>
 
 
-// function to compare pids
-static
-int
-proc_comparator(void* left, void* right)
-{
-    struct proc *l = (struct proc*)left;
-    int r = *(int*)right;
-    return l->PID - r;
-}
-
 
 /*
 --- exit
@@ -39,7 +29,7 @@ if no:
 Clean up process ressources (free allocated space and pid)
 */
 void sys_exit(int exitcode) {
-
+kprintf("DEAD THROUGH EXIT!\n");
 	struct thread* curt = curthread;
 	struct proc* curp = curt->t_proc;
 	struct proc* childp = NULL;
@@ -53,7 +43,7 @@ void sys_exit(int exitcode) {
 	if(list_isempty(&curp->p_childlist) == 0){
 		while(list_isempty(&curp->p_childlist) == 0)
 		{
-			childp = (struct proc*)list_front(&curp->p_childlist);
+			childp = (struct proc*)list_remove_front(&curp->p_childlist);
 			if(childp == NULL)				// TODO make shure that this not happens
 			{
 				//spinlock_release(&childp->p_lock);
@@ -61,7 +51,6 @@ void sys_exit(int exitcode) {
 				// TODO die
 			}
 
-			childp = (struct proc*)list_remove(&curp->p_childlist, (void*) childp, &proc_comparator);
 			//spinlock_acquire(&childp->p_lock);
 
 
@@ -86,16 +75,31 @@ void sys_exit(int exitcode) {
 	}
 	lock_release(&curp->p_childlist_lock);
 
-	curp->p_returnvalue = exitcode;
-
-
-	// TODO cleanup process ressouces
+	
 
 	// unlock process struct
 	//spinlock_release(&childp->p_lock);
+	
+	curp->p_returnvalue = exitcode;
+	//as_deactivate();	// TODO should this happen before i remove thread? (proc_destroy includes this)
+	//as = curproc_setas(NULL);
+	//as_destroy(as);
+
+// TODO if smth breaks down in the join mechanism. Use another one here!!!!
+
+
+	// detach thread from process so it does not get cleaned up from proc_destroy
+	proc_remthread(curt);
+
+	// destroy process structure
+	proc_destroy(curp);
+
+kprintf("ALIVE THROUGH EXIT?\n");
 
 	// exit thread should cleanup the thread and release waiting parent processes
 	thread_exit(exitcode);
+	// should never happen since thread_exit() should not return
+	panic("return from thread_exit in sys_exit\n");
 }
 
 

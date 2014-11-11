@@ -59,6 +59,7 @@ int get_new_process_id(){
 	if(new_id >= 0){
 		int ret = list_push_back(lst_usedPIDs, (void*) &new_id);
 		if(ret)
+			lock_release(l);
 			return ret;
 	}
 
@@ -77,7 +78,7 @@ void release_process_id(int i){
 	queue_push(PID_queue, (void*) i);
 
 	// remove pid from used list
-	// list_remove(lst_usedPIDs, (void*) &i, &int_comparator);
+	list_remove(lst_usedPIDs, (void*) &i, &int_comparator);
 	//int *ret = *(int*)list_remove(lst_usedPIDs, (void*) i, &int_comparator);		//TODO change return to check pass fail
 	//if(res == NULL || *ret != i)		
 	//	return ret;
@@ -103,7 +104,7 @@ void pid_bootstrap(){
 // cleanup the PID system 
 void pid_cleanup(){
 
-	list_destroy(lst_usedPIDs);
+	//list_destroy(lst_usedPIDs);
 	queue_destroy(PID_queue);
 	lock_destroy(l);
 };

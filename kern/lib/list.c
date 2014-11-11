@@ -122,6 +122,31 @@ list_pop_front(struct list* lst)
 }
 
 void*
+list_remove_front(struct list* lst)
+{
+    KASSERT(lst != NULL);
+    KASSERT(lst->datatype == LISTTYPE);
+
+    if (lst->size == 0) {
+        return NULL;
+    }
+    
+    struct listnode* old_head = lst->head;
+    KASSERT_LISTNODE(old_head);
+    lst->head = lst->head->next;
+    --lst->size;
+
+    if (lst->size == 0) {
+        lst->tail = NULL;
+    }
+
+    void* tmp = old_head->val;
+    old_head->val = NULL;
+    kfree(old_head);
+    return tmp;
+}
+
+void*
 list_front(struct list* lst)
 {
     KASSERT(lst != NULL);
