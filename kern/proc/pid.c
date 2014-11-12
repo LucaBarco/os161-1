@@ -76,7 +76,7 @@ void release_process_id(int i){
 	queue_push(PID_queue, (void*) i);
 
 	// remove pid from used list
-	//list_remove(lst_usedPIDs, (void*) &i, &int_comparator);
+	list_remove(lst_usedPIDs, (void*) &i, &int_comparator);
 	//int *ret = *(int*)list_remove(lst_usedPIDs, (void*) i, &int_comparator);		//TODO change return to check pass fail
 	//if(res == NULL || *ret != i)		
 	//	return ret;
@@ -113,7 +113,7 @@ int pidUsed(int pid){
 	lock_acquire(l);
 	int *res;
 	res = (int*)list_find(lst_usedPIDs, (void*) &pid, &int_comparator);
-    lock_release(l);
+    	lock_release(l);
 	if (res != NULL && *res == pid)
 		return 1;
 	else

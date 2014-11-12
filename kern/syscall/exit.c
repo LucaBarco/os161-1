@@ -50,7 +50,7 @@ void sys_exit(int exitcode) {
 			}
 
 			//spinlock_acquire(&childp->p_lock);
-
+			childp->p_parent = NULL;
 
 			childt = threadarray_get(&childp->p_threads, 0);
 			if( childt == NULL)				// TODO make shure that this not happens
@@ -68,6 +68,7 @@ void sys_exit(int exitcode) {
 
 			//spinlock_release(&childp->p_lock);
 			curt->t_childs_to_join--;
+					
 		}
 		
 	}
