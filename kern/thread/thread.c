@@ -859,7 +859,7 @@ thread_exit(int ret)
 	//proc_remthread(cur);
 
 	/* Make sure we *are* detached (move this only if you're sure!) */
-	KASSERT(cur->t_proc == NULL);
+	//KASSERT(cur->t_proc == NULL);
 
 	/* Check the stack guard band. */
 	thread_checkstack(cur);

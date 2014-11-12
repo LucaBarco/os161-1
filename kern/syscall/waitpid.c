@@ -8,7 +8,7 @@
 #include <syscall.h>
 #include <thread.h>
 #include <pid.h>
-
+#include <copyinout.h>
 
 // function to compare pids
 static
@@ -74,9 +74,6 @@ int sys_waitpid(int pid, int *status, int options, int *ret) {
 		lock_release(curp->p_childlist_lock);
 		return -1;
 	}
-    
-    //detach childthread to prep for child's thread_exit to wake up
-    proc_remthread(childt);
 
 	result = thread_join(childt, &childreturn);
 	if(result)
@@ -86,7 +83,11 @@ int sys_waitpid(int pid, int *status, int options, int *ret) {
 	}
     
     //copy child pid now that child thread successfully exited
+    copyout(&childp->p_returnvalue, (userptr_t) status, sizeof(int));
 	memcpy(ret, &childp->PID, sizeof(int));
+    
+    //detach childthread
+    proc_remthread(childt);
     //finally done with child process, destroy it
     proc_destroy(childp);
 
