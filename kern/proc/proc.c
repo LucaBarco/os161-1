@@ -282,14 +282,7 @@ proc_create_runprogram(const char *name)
 	spinlock_release(&curproc->p_lock);
 
 	/* Process ID */
-	proc->PID = get_new_process_id();
-
-	/* Child list */
-	proc->p_childlist = list_create();
-
-	proc->p_parent = NULL;
-	proc->p_returnvalue = 0;
-	proc->p_childlist_lock = lock_create(name);
+	//proc->PID = get_new_process_id();
 
 	return proc;
 }

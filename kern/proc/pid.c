@@ -110,9 +110,10 @@ void pid_cleanup(){
 
 // check if pid is in use
 int pidUsed(int pid){
-	
+	lock_acquire(l);
 	int *res;
 	res = (int*)list_find(lst_usedPIDs, (void*) &pid, &int_comparator);
+    lock_release(l);
 	if (res != NULL && *res == pid)
 		return 1;
 	else

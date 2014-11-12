@@ -27,7 +27,7 @@ if no:
 Clean up process ressources (free allocated space and pid)
 */
 void sys_exit(int exitcode) {
-kprintf("DEAD THROUGH EXIT!\n");
+//kprintf("DEAD THROUGH EXIT!\n");
 	struct thread* curt = curthread;
 	struct proc* curp = curt->t_proc;
 	struct proc* childp = NULL;
@@ -86,13 +86,15 @@ kprintf("DEAD THROUGH EXIT!\n");
 // TODO if smth breaks down in the join mechanism. Use another one here!!!!
 
 
-	// detach thread from process so it does not get cleaned up from proc_destroy
-	proc_remthread(curt);
 
 	// destroy process structure
-	proc_destroy(curp);
+    if(curp->p_parent == NULL) {
+        // detach thread from process so it does not get cleaned up from proc_destroy
+        proc_remthread(curt);
+        proc_destroy(curp);
+    }
 
-kprintf("ALIVE THROUGH EXIT?\n");
+//kprintf("ALIVE THROUGH EXIT?\n");
 
 	// exit thread should cleanup the thread and release waiting parent processes
 	thread_exit(exitcode);

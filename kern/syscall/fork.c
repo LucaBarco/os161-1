@@ -83,7 +83,7 @@ processes each observe the correct return value
 (that is, 0 for the child and the newly created pid for the parent).
 */
 int sys_fork(struct trapframe *tf, int32_t *ret){
-kprintf("FORK START!\n");
+//kprintf("FORK START!\n");
 //kprintf("FORK DEBUG: 0\n");
 	int new_pid = 0;
 	struct addrspace *new_as = NULL;
@@ -123,6 +123,7 @@ kprintf("FORK START!\n");
 
 	// create child process
 	new_proc = proc_create_runprogram(name);
+    new_proc->p_parent = curp;
 	if (new_proc == NULL) {
 		return -1; 
 	}
@@ -190,6 +191,6 @@ kprintf("FORK START!\n");
 	/* Thread subsystem fields */
 	list_push_back(curp->p_childlist, (void*)new_proc);
 	//spinlock_release(&curp->p_lock);
-kprintf("FORK END!\n");
+//kprintf("FORK END!\n");
 	return 0;
 }

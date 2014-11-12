@@ -32,7 +32,7 @@ Clean up child process ressources (free allocated space and pid)
 Return child pid
 */
 int sys_waitpid(int pid, int *status, int options, int *ret) {
-kprintf("DEAD THROUGH WAITPID!\n");
+//kprintf("DEAD THROUGH WAITPID!\n");
 	struct thread* curt = curthread;
 	struct thread* childt;
 	struct proc* curp = curt->t_proc;
@@ -41,10 +41,10 @@ kprintf("DEAD THROUGH WAITPID!\n");
 	int result;
 
 	// chek if pid argument named a nonexistent process
-	if(pidUsed(pid) != 1)
+	/*if(pidUsed(pid) != 1)
 	{
 		return ESRCH;
-	}
+	}*/
 
 	// check if status is invalid		// TODO check if i understood it right
 	if(status == NULL)
@@ -59,8 +59,7 @@ kprintf("DEAD THROUGH WAITPID!\n");
 	}
 
 	lock_acquire(curp->p_childlist_lock);
-	childp = (struct proc*)list_find(curp->p_childlist, (void*) &pid, &proc_comparator);
-	
+	childp = (struct proc*)list_remove(curp->p_childlist, (void*) &pid, &proc_comparator);
 
 	// check if pid argument named a process that was not a child of the current process
 	if(childp == NULL)
@@ -75,6 +74,9 @@ kprintf("DEAD THROUGH WAITPID!\n");
 		lock_release(curp->p_childlist_lock);
 		return -1;
 	}
+    
+    //detach childthread to prep for child's thread_exit to wake up
+    proc_remthread(childt);
 
 	result = thread_join(childt, &childreturn);
 	if(result)
@@ -82,11 +84,14 @@ kprintf("DEAD THROUGH WAITPID!\n");
 		lock_release(curp->p_childlist_lock);
 		return result;
 	}
-
+    
+    //copy child pid now that child thread successfully exited
 	memcpy(ret, &childp->PID, sizeof(int));
+    //finally done with child process, destroy it
+    proc_destroy(childp);
 
 	lock_release(curp->p_childlist_lock);
-kprintf("ALIVE THROUGH WAITPID!\n");
+//kprintf("ALIVE THROUGH WAITPID!\n");
 	return 0;
 }
 
