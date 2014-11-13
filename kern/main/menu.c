@@ -43,6 +43,7 @@
 #include <test.h>
 #include "opt-sfs.h"
 #include "opt-net.h"
+#include <current.h>
 
 /*
  * In-kernel menu and command dispatcher.
@@ -116,6 +117,10 @@ common_prog(int nargs, char **args)
 	struct proc *proc;
 	int result;
 
+	struct thread* curt = curthread;
+	struct proc* curp = curt->t_proc;
+
+
 #if OPT_SYNCHPROBS
 	kprintf("Warning: this probably won't work with a "
 			"synchronization-problems kernel.\n");
@@ -137,6 +142,20 @@ common_prog(int nargs, char **args)
 		proc_destroy(proc);
 		return result;
 	}
+
+
+	lock_acquire(curp->p_childlist_lock);
+	list_push_back(curp->p_childlist, (void*)proc);
+	proc->p_parent = curp;
+	lock_release(curp->p_childlist_lock);
+
+
+	int ret;
+	int status;
+
+	int sys_ret = sys_waitpid(proc->PID, &status, 0, &ret);
+
+	(void) sys_ret;
 
 	/*
 	 * The new process will be destroyed when the program exits...

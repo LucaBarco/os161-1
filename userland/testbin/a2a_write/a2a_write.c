@@ -10,7 +10,7 @@ main(int argc, char *argv[])
 	(void) argv;
 
 
-	char filename[] = "/file_syscall.txt";
+	char filename[] = "/assignment2.txt";
 
 
 	int file = open(filename, O_WRONLY|O_CREAT|O_TRUNC, 0664);
@@ -21,8 +21,9 @@ main(int argc, char *argv[])
 		return -1;
 	}
 
-	printf("\n writing \n");
+	printf("\n Writing to file &%s \n", filename);
 	
+
 	char write_buffer[] = "Eichhoernchen";
 
 	int count = 14;

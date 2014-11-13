@@ -496,7 +496,7 @@ getcmd(char *buf, size_t len)
 	 */
 	//printf("\n start \n");
 	while (!done) {
-		printf("\n loop \n");
+		//printf("\n loop \n");
 		ch = getchar();
 		if ((ch == '\b' || ch == 127) && pos > 0) {
 			putchar('\b');
@@ -538,9 +538,9 @@ interactive(void)
 		printf("OS/161$ ");
 		getcmd(buf, sizeof(buf));
 		//putchar('#');
-		printf("@@@\n");
-		printf(buf);
-		printf("\n@@@");
+		//printf("@@@\n");
+		///printf(buf);
+		//printf("\n@@@");
 		docommand(buf, &ei);
 		//printf("\n afterDO \n");
 		printstatus(&ei, 0);

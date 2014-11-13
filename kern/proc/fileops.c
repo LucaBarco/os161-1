@@ -142,6 +142,12 @@ struct fd_table* fd_table_copy(struct fd_table* fdt, struct proc* new_proc){
 		if(fdt->fds[i] != NULL){
 			// there is a file descriptor, copy it
 			fdt_copy->fds[i] = fd_copy(fdt->fds[i]);
+
+			// if they are file descriptors for the console, reset the offset
+			if(i<=2){
+				fdt_copy->fds[i]->offset = 0;
+			}
+			
 		}
 
 	}
