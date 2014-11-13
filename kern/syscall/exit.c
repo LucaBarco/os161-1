@@ -31,26 +31,35 @@ void sys_exit(int exitcode) {
 	struct thread* curt = curthread;
 	struct proc* curp = curt->t_proc;
 	struct proc* childp = NULL;
-	struct thread* childt = NULL;
+	//struct thread* childt = NULL;
 
 	// lock process struct
 	//spinlock_acquire(&childp->p_lock);
 
 	// remove join property of child processes
 	lock_acquire(curp->p_childlist_lock);
-	if(list_isempty(curp->p_childlist) == 0){
-		while(list_isempty(curp->p_childlist) == 0)
+	if(!list_isempty(curp->p_childlist)){ // if we have children
+		while(!list_isempty(curp->p_childlist)) // as long as we have children
 		{
 			childp = (struct proc*)list_remove_front(curp->p_childlist);
 			if(childp == NULL)				// TODO make shure that this not happens
 			{
 				//spinlock_release(&childp->p_lock);
 				lock_release(curp->p_childlist_lock);
+				KASSERT(false);
 				// TODO die
 			}
 
 			//spinlock_acquire(&childp->p_lock);
-			childp->p_parent = NULL;
+			//childp->p_parent = NULL;
+
+			//P(childp->p_exit_sem_child);
+			// wait for parent
+			V(childp->p_exit_sem_parent);
+/*
+			// if our child process still has children
+			if(threadarray_num(&childp->p_threads)>0){
+
 
 			childt = threadarray_get(&childp->p_threads, 0);
 			if( childt == NULL)				// TODO make shure that this not happens
@@ -63,10 +72,14 @@ void sys_exit(int exitcode) {
 			// update thread variables of child process
 			childt->has_parent = false;
 			childt->t_parent = NULL;
-			sem_destroy(childt->t_join_sem_child);
-			sem_destroy(childt->t_join_sem_parent);
+			//sem_destroy(childt->t_join_sem_child);
+			//sem_destroy(childt->t_join_sem_parent);
 
 			//spinlock_release(&childp->p_lock);
+						
+			}
+*/
+
 			curt->t_childs_to_join--;
 					
 		}
@@ -80,20 +93,46 @@ void sys_exit(int exitcode) {
 	//spinlock_release(&childp->p_lock);
 	
 	curp->p_returnvalue = exitcode;
-	//as_deactivate();	// TODO should this happen before i remove thread? (proc_destroy includes this)
-	//as = curproc_setas(NULL);
-	//as_destroy(as);
+
 
 // TODO if smth breaks down in the join mechanism. Use another one here!!!!
 
 
-
+/*
 	// destroy process structure
-    if(curp->p_parent == NULL) {
-        // detach thread from process so it does not get cleaned up from proc_destroy
-        proc_remthread(curt);
-        proc_destroy(curp);
+    if(curp->p_parent != NULL) {
+	//lock_acquire(curp->p_parent->p_childlist_lock);
+
+	
+	P(curp->p_exit_sem);
+
+		proc_remthread(curt);
+	//lock_release(curp->p_parent->p_childlist_lock);
+	sem_destroy(curp->p_exit_sem);
+		proc_destroy(curp);
+
+
+
+
+
+    }else{
+	proc_remthread(curt);
+		proc_destroy(curp);
+
     }
+	*/
+if(curp->p_parent != NULL){
+	V(curp->p_exit_sem_child);
+	P(curp->p_exit_sem_parent);
+} 
+
+		proc_remthread(curt);
+			// semaphores no longer needed
+			sem_destroy(curp->p_exit_sem_child);
+			sem_destroy(curp->p_exit_sem_parent);
+		proc_destroy(curp);
+
+	
 
 //kprintf("ALIVE THROUGH EXIT?\n");
 

@@ -76,7 +76,8 @@ struct proc {
 	/* we need two structs for the files. A hashtable to find the file descriptor and a list with file descriptors to copy them when forking */
 	struct fd_table* p_fd_table;
 
-
+	struct semaphore *p_exit_sem_child;
+	struct semaphore *p_exit_sem_parent;
 };
 
 /* This is the process structure for the kernel and for kernel-only threads. */

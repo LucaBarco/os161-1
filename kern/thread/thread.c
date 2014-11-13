@@ -847,8 +847,9 @@ thread_exit(int ret)
 		// wait for parent
 		P(cur->t_join_sem_parent);
 
-		// semaphore no longer needed
+		// semaphores no longer needed
 		sem_destroy(cur->t_join_sem_parent);
+		sem_destroy(cur->t_join_sem_child);
 	}
 
 	/*
@@ -856,16 +857,20 @@ thread_exit(int ret)
 	 * around, depending on how your wait/exit works.
      * MOVED TO EXIT
 	 */
-	//proc_remthread(cur);
+	if(cur->t_proc != NULL){
+		proc_remthread(cur);
+	}
 
 	/* Make sure we *are* detached (move this only if you're sure!) */
-	//KASSERT(cur->t_proc == NULL);
+	KASSERT(cur->t_proc == NULL);
 
 	/* Check the stack guard band. */
 	thread_checkstack(cur);
 
 	/* Interrupts off on this processor */
     splhigh();
+	
+	//kprintf("@");
 
 	thread_switch(S_ZOMBIE, NULL, NULL);
 
@@ -908,7 +913,7 @@ thread_join(struct thread *thread, int *ret_out)
 	P(thread->t_join_sem_child);
 
 	// semaphore no longer needed
-	sem_destroy(thread->t_join_sem_child);
+	//sem_destroy(thread->t_join_sem_child);
 	
 	*ret_out = thread->t_return;
 

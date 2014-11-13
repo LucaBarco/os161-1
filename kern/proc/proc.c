@@ -140,7 +140,9 @@ proc_create(const char *name)
 	proc->p_parent = NULL;
 	proc->p_returnvalue = 0;
 	proc->p_childlist_lock = lock_create(name);
-
+	proc->p_childlist_lock = lock_create(name);
+	proc->p_exit_sem_child = sem_create("wait_sem_child", 0);
+	proc->p_exit_sem_parent = sem_create("wait_sem_parent", 0);
 	return proc;
 }
 
