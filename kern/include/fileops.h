@@ -94,10 +94,10 @@ struct file_descriptor* add_file_descriptor(struct fd_table* fdt, char* filename
 int fd_open(struct fd_table* fdt, char* filename, int flags, int* fd_id);
 
 
-int fd_read(struct file_descriptor* fd, char *kbuf, size_t buflen, size_t* read_bytes);
+int fd_read(struct file_descriptor* fd, userptr_t kbuf, size_t buflen, size_t* read_bytes);
 
 
-int fd_write(struct file_descriptor* fd, char* kbuf, size_t buflen, size_t* written_bytes);
+int fd_write(struct file_descriptor* fd, userptr_t  kbuf, size_t buflen, size_t* written_bytes);
 
 
 int fd_close(struct fd_table* fdt, struct file_descriptor* fd);

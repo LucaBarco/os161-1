@@ -55,6 +55,8 @@ main(int argc, char *argv[])
 	int fd, rv;
 
 	static char filename[] = "/a2a_filetest.txt";
+
+	
 	
 	fd = open(filename, O_WRONLY|O_CREAT|O_TRUNC, 0664);
 	if (fd<0) {
@@ -72,10 +74,18 @@ main(int argc, char *argv[])
 		err(1, "%s: close (1st time)", filename);
 	}
 
+		//printf("fd write %d \n", fd);
+
+	
+
+
+
 	fd = open(filename, O_RDONLY);
 	if (fd<0) {
 		err(1, "%s: open for read", filename);
 	}
+
+//	printf("fd read %d \n", fd);
 
 	rv = read(fd, readbuf, 40);
 	if (rv<0) {
@@ -88,9 +98,18 @@ main(int argc, char *argv[])
 	/* ensure null termination */
 	readbuf[40] = 0;
 
+	printf("\n");
+	printf(readbuf);
+	printf("\n");
+	printf(writebuf);
+	printf("\n");
+
+
 	if (strcmp(readbuf, writebuf)) {
 		errx(1, "Buffer data mismatch!");
 	}
+
+
 
 	//rv = remove(argv[1]);
 	//if (rv<0) {

@@ -494,8 +494,9 @@ getcmd(char *buf, size_t len)
 	/*
 	 * In the absence of a <ctype.h>, assume input is 7-bit ASCII.
 	 */
-
+	//printf("\n start \n");
 	while (!done) {
+		printf("\n loop \n");
 		ch = getchar();
 		if ((ch == '\b' || ch == 127) && pos > 0) {
 			putchar('\b');
@@ -536,7 +537,12 @@ interactive(void)
 	while (1) {
 		printf("OS/161$ ");
 		getcmd(buf, sizeof(buf));
+		//putchar('#');
+		printf("@@@\n");
+		printf(buf);
+		printf("\n@@@");
 		docommand(buf, &ei);
+		//printf("\n afterDO \n");
 		printstatus(&ei, 0);
 #ifdef WNOHANG
 		waitpoll();
@@ -577,6 +583,7 @@ main(int argc, char *argv[])
 		interactive();
 	}
 	else if (argc == 3 && !strcmp(argv[1], "-c")) {
+		//printf("non interactive");
 		struct exitinfo ei;
 		docommand(argv[2], &ei);
 		printstatus(&ei, 0);

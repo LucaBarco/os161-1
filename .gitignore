@@ -15,3 +15,7 @@ LHD1.img
 
 
 userland/testbin/*/build
+userland/bin/*/build
+userland/sbin/*/build
+userland/lib/*/build
+userland/build

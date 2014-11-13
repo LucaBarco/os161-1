@@ -263,7 +263,7 @@ int test_synch_hashtable(){
     return 0;
 }
 
-
+/*
 
 // tests fileoperations by creating a new process and doing some read write stuff
 int test_file_ops(){
@@ -302,6 +302,7 @@ int test_file_ops(){
 
     fd_write(stderr, content, 7, &written_bytes);
 
+    kprintf("read write test.txt\n");
 
     // create a new file descriptor for just a single text file
     char filename[] = "/test.txt";
@@ -315,12 +316,42 @@ int test_file_ops(){
 
     fd_write(file, content, 7, &written_bytes);
 
-    fd_read(file, content, 7, &written_bytes);
+    char read_buffer[50];
+    bzero((void*) read_buffer, 50);
 
-    kprintf(content);    
 
+    fd_read(file, read_buffer, 7, &written_bytes);
+
+    kprintf("\n ***  printing read stuff **** \n");
+
+    kprintf(read_buffer);    
+
+
+    fd_close(fdt, file);
+
+    
+    kprintf("\n ***  testing twiddle read **** \n");
+    char filename_twiddle[] = "/a2a_filetest.txt";
+
+    fd_open(fdt, filename_twiddle, O_RDONLY, (int*) &fdID);
+
+    struct file_descriptor* file2 = get_fd(fdt, fdID);
+
+    bzero((void*) read_buffer, 50);
+
+
+    fd_read(file2, read_buffer, 40, &written_bytes);
+
+    kprintf("\n ***  printing read stuff **** \n");
+
+    kprintf(read_buffer); 
 
     (void) file;
+
+
+//    kprintf("\n reading twiddle dee \n");
+//    char filename[] = 
+
     
     kprintf("\n****** done testing write *******\n");
 
@@ -330,6 +361,7 @@ int test_file_ops(){
     return 0;
 
 }
+
 
 
 
@@ -416,7 +448,7 @@ int test_file_table_copy(){
 }
 
 
-
+*/
 
 
 
@@ -429,23 +461,23 @@ int asst2_tests(int nargs, char **args){
 	//KASSERT(test_pid_in_use() == 0);
 	// DO NOT CHANGE THE ORDER HERE!
 	
-	KASSERT(test_minimal_acquire_release_acquire_counter() == 0);
-	KASSERT(test_pid_upper_limit_counter() == 0);
-	KASSERT(test_pid_release() == 0);    
-	KASSERT(test_minimal_acquire_release_acquire_queue() == 0);
+	//KASSERT(test_minimal_acquire_release_acquire_counter() == 0);
+	//KASSERT(test_pid_upper_limit_counter() == 0);
+	//KASSERT(test_pid_release() == 0);    
+	//KASSERT(test_minimal_acquire_release_acquire_queue() == 0);
 
     
-	release_ids(10000,30000);
+	//release_ids(10000,30000);
 
     kprintf("starting tests for hash table \n");
-	test_synch_hashtable();
+	//test_synch_hashtable();
 
 
 	kprintf("starting tests for files ops \n");
-	test_fd_create_destroy();    
-	test_fd_table();
-    test_file_ops();
-    test_file_table_copy();
+	//test_fd_create_destroy();    
+	//test_fd_table();
+    //test_file_ops();
+    //test_file_table_copy();
 
 
     kprintf("\n\n");

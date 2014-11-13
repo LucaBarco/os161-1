@@ -55,14 +55,14 @@ int sys_write(struct trapframe *tf, int32_t *ret){
 
 
 	// create the kernel buffer
-	char kbuf[buf_size];
-	copyin(user_buffer, kbuf, buf_size);
+	//char kbuf[buf_size];
+	//copyin(user_buffer, kbuf, buf_size);
 
 
 	size_t written_bytes;
 
 
-	int res = fd_write(fd, kbuf, buf_size, &written_bytes);
+	int res = fd_write(fd, user_buffer, buf_size, &written_bytes);
 	if(res){
 		return res;
 	}

@@ -31,6 +31,8 @@ struct file_descriptor* fd_create(void){
 		return NULL;
 	}
 
+	fd->offset = 0;
+
 
 	fd->refcount = 0;
 
@@ -250,8 +252,7 @@ struct file_descriptor* add_file_descriptor(struct fd_table* fdt, char* filename
 	// set the new id
 	fd->index = new_index;
 
-	// add the file descritpor to the tables list and hashtable
-	// TODO dummy, do this again with the hashtable
+	// add the file descritpor to the tables 	
 	fdt->fds[new_index] = fd;	
 
 	return fd;
@@ -310,7 +311,7 @@ int fd_open(struct fd_table* fdt, char* filename, int flags, int* fd_index){
 
 
                                        
-int fd_read(struct file_descriptor* fd, char *kbuf, size_t buflen, size_t* read_bytes){
+int fd_read(struct file_descriptor* fd, userptr_t kbuf, size_t buflen, size_t* read_bytes){
 
 	
 
@@ -328,7 +329,7 @@ int fd_read(struct file_descriptor* fd, char *kbuf, size_t buflen, size_t* read_
 	off_t old_offset = fd->offset;
 
 	// initialize iovec and uio for reading
-	uio_kinit(&iov, &io, kbuf, buflen, fd->offset, UIO_READ); // this sets it to UIO_SYSSPACE, does it need to be UIO_USERSPACE? TODO
+	uio_uinit(&iov, &io, kbuf, buflen, fd->offset, UIO_READ); // this sets it to UIO_SYSSPACE, does it need to be UIO_USERSPACE? TODO
 
 
 	// READ
@@ -339,7 +340,10 @@ int fd_read(struct file_descriptor* fd, char *kbuf, size_t buflen, size_t* read_
 	fd->offset = io.uio_offset; // TODO CHECK ON FAILURE
 
 	// set read bytes
-	*read_bytes = (size_t) ((unsigned int) io.uio_offset) - ((unsigned int) old_offset );
+	//*read_bytes = (size_t) ((unsigned int) io.uio_offset) - ((unsigned int) old_offset );
+	*read_bytes = buflen - io.uio_resid;
+
+	(void) old_offset;
 
 	// free the stuff
 	//kfree(&iov);
@@ -351,7 +355,7 @@ int fd_read(struct file_descriptor* fd, char *kbuf, size_t buflen, size_t* read_
 
 
 
-int fd_write(struct file_descriptor* fd, char* kbuf, size_t buflen, size_t* written_bytes){
+int fd_write(struct file_descriptor* fd, userptr_t  kbuf, size_t buflen, size_t* written_bytes){
 
 	
 
@@ -366,7 +370,7 @@ int fd_write(struct file_descriptor* fd, char* kbuf, size_t buflen, size_t* writ
 	off_t old_offset = fd->offset;
 	
 	// initialize iovec and uio for reading
-	uio_kinit(&iov, &io, kbuf, buflen, fd->offset, UIO_WRITE); // this sets it to UIO_SYSSPACE, does it need to be UIO_USERSPACE? TODO
+	uio_uinit(&iov, &io, kbuf, buflen, fd->offset, UIO_WRITE); // this sets it to UIO_SYSSPACE, does it need to be UIO_USERSPACE? TODO
 
 
 	// READ
@@ -377,8 +381,10 @@ int fd_write(struct file_descriptor* fd, char* kbuf, size_t buflen, size_t* writ
 	fd->offset = io.uio_offset; // TODO CHECK ON FAILURE
 
 	// set written bytes
-	*written_bytes = (size_t) ((unsigned int) io.uio_offset) - ((unsigned int) old_offset );
+	//*written_bytes = (size_t) ((unsigned int) io.uio_offset) - ((unsigned int) old_offset );
+	*written_bytes = buflen - io.uio_resid;
 
+	(void) old_offset;
 
 	
 	lock_release(fd->fd_lock);
@@ -400,6 +406,7 @@ int fd_close(struct fd_table* fdt, struct file_descriptor* fd){
 
 		// destroy the file descriptor after setting it to null in the table
 		fdt->fds[fd->index] = NULL;
+		release_fid(fdt, fd->index);
 
 		fd_destroy(fd);
 	}

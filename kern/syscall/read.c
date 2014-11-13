@@ -38,7 +38,7 @@ int sys_read(struct trapframe *tf, int32_t *ret){
 
 
 	// see if the fd_id is valid
-	if(!( fd_id > 0 && fd_id < __OPEN_MAX - 1 )){
+	if(!( fd_id >= 0 && fd_id < __OPEN_MAX  )){
 
 		return EBADF;
 
@@ -55,11 +55,11 @@ int sys_read(struct trapframe *tf, int32_t *ret){
 
 
 	// create the kernel buffer
-	char kbuf[buf_size];
-	size_t read_bytes;
+	//char kbuf[buf_size];
+	size_t read_bytes = 0;
 
 
-	int res = fd_read(fd, kbuf, buf_size, &read_bytes);
+	int res = fd_read(fd, user_buffer, buf_size, &read_bytes);
 
 
 	if(res){
@@ -67,10 +67,10 @@ int sys_read(struct trapframe *tf, int32_t *ret){
 	}
 
 	// copy into user space
-	res = copyout(kbuf, user_buffer, buf_size);
-	if (res) {
-		return res;
-	}
+	//res = copyout(kbuf, user_buffer, buf_size);
+	//if (res) {
+	//	return res;
+	//}
 
 
 
