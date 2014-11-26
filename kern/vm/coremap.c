@@ -2,6 +2,7 @@
 #include <types.h>
 #include <lib.h>
 #include <vm.h>
+#include <spinlock.h>
 
 
 // the borders of the ram after ram_bootstrap
@@ -11,6 +12,21 @@ paddr_t lastpaddr; // last address
 
 struct cm_entry* coremap;
 
+unsigned int number_of_pages_avail = -1;
+
+// allocate a static spinlock
+static struct spinlock coremap_lock;
+
+
+// acquires the coremap lock
+void acquire_cm_lock(void){
+    spinlock_acquire(&coremap_lock);
+}
+
+// releases the coremap lock
+void release_cm_lock(void){
+    spinlock_release(&coremap_lock);
+}
 
 // sets up the space in virtual memory to hold the coremap
 void coremap_bootstrap(void){
@@ -22,7 +38,7 @@ void coremap_bootstrap(void){
     unsigned int number_of_bytes_avail = lastpaddr - firstpaddr; // I think that has to be +1.. TODO not critical
 
     // get the number of available pages
-    unsigned int number_of_pages_avail = number_of_bytes_avail / PAGE_SIZE;
+    number_of_pages_avail = number_of_bytes_avail / PAGE_SIZE;
 
     /* testing struct sizes */
     size_t struct_size = sizeof(struct cm_entry);
@@ -54,70 +70,162 @@ void coremap_bootstrap(void){
     KASSERT(number_of_pages > 0);
 
 
-    // Print that out
-    kprintf("%u pages (%u bytest) occupied for the coremap\n", number_of_pages, coremap_size);   
-
-
-
-    struct dummy_table_entry test;
+    
 
     // get a pointer for the coremap. we have to translate the physical address into 
     coremap = (struct cm_entry*) PADDR_TO_KVADDR(firstpaddr);
 
     // initialize the coremap
     for(unsigned int i = 0; i < number_of_pages_avail; i++){
-        coremap[i].free = 1;
+        coremap[i].free = 1; 
         coremap[i].kernel = 0;
-        coremap[i].page_table_entry = &test;
+        coremap[i].page_table_entry = NULL;
     }
+
+    // lock the pages which are occupied by the coremap
+    for(unsigned int i = 0; i < number_of_pages; i++){
+        coremap[i].free = 0; 
+        coremap[i].kernel = 1;
+    }
+
+    KASSERT(coremap[0].free == false);
+    KASSERT(coremap[0].kernel == true);
 
     // now try to steal that space for the coremap
     // we do this by incrementing the firstpaddr pointer
     firstpaddr += number_of_pages * PAGE_SIZE;
 
 
+    // and done.    
+    kprintf("%u pages (%u bytest) occupied for the coremap\n", number_of_pages, coremap_size);   
 
+    spinlock_init(&coremap_lock);
 
+    // do a selftest
+    
+    coremap_selftest();
+    
 
+    kprintf("coremap selftest passed \n");   
 
 }
 
-// returns true if the page in physical memory is not occupied, false otherwise
-bool is_free(unsigned int page){ 
 
-    (void) page; 
+void coremap_selftest(){
 
+    acquire_cm_lock();
+
+    KASSERT(coremap[0].free == false);
+    KASSERT(coremap[0].kernel == true);
+
+    // find the next free page
+    unsigned int free_page_index;
+
+    KASSERT(get_free_page(&free_page_index));
+
+    KASSERT(free_page_index > 0);
+
+    bool check = is_free(free_page_index);
+    KASSERT(check);
+
+    set_occupied(free_page_index);
+    check = is_free(free_page_index);
+    KASSERT(check == false);
+
+    set_kernel_page(free_page_index);
+    check = is_kernel_page(free_page_index);
+    KASSERT(check);
+
+    set_user_page(free_page_index);
+    check = is_kernel_page(free_page_index);
+    KASSERT(check == false);
+
+    set_free(free_page_index);
+    check = is_free(free_page_index);
+    KASSERT(check);
+
+    release_cm_lock();
+
+}
+
+bool get_free_page(unsigned int* page_index){
+
+    for(unsigned int i = 0; i < number_of_pages_avail; i++){
+        if(is_free(i)){
+            *page_index = i;
+            return true;
+        }
+    }
+
+    *page_index = 0xBADEAFFE;
     return false;
 }
 
-// sets the specified page to occupied
-void set_occupied(unsigned int page){ 
+// returns the virtual (kernel) address of the page with the given address
+vaddr_t get_page_vaddr(unsigned int page_index){
+    KASSERT(page_index < number_of_pages_avail);
 
-    (void) page; 
+    // calculate the first address of the desired page
+    unsigned int p_addr = firstpaddr + (page_index * PAGE_SIZE);
+
+    return (vaddr_t) PADDR_TO_KVADDR(p_addr);
+}
+
+
+
+// returns true if the page in physical memory is not occupied, false otherwise
+bool is_free(unsigned int page_index){ 
+    KASSERT(page_index < number_of_pages_avail);
+    
+    return coremap[page_index].free;
+}
+
+// sets the specified page to occupied
+void set_occupied(unsigned int page_index){ 
+    KASSERT(page_index < number_of_pages_avail);
+    
+    coremap[page_index].free = false;    
+
 
 }
 
 // sets the specified page to free and writes deadbeef
-void set_free(unsigned int page){ 
-    (void) page; 
+void set_free(unsigned int page_index){ 
+    KASSERT(page_index < number_of_pages_avail);
+ 
+    coremap[page_index].free = true;
+
+    // get the kvaddr
+    vaddr_t addr = get_page_vaddr(page_index);
+
+    uint32_t* page = (uint32_t*) addr;
+
+    // delete stuff
+    for(unsigned int i = 0; i < PAGE_SIZE / sizeof(uint32_t); i++){
+        page[i] = 0xDEADBEEF;
+    }
+
 }
 
 // checks if the speciefied page is a kernel page
-bool is_kernel_page(unsigned int page){ 
-    (void) page; 
-
-    return 0;
+bool is_kernel_page(unsigned int page_index){ 
+    KASSERT(page_index < number_of_pages_avail);
+    
+    return coremap[page_index].kernel;
 }
 
 // sets the specified page as a kernel page
-void set_kernel_page(unsigned int page){ 
-    (void) page; 
+void set_kernel_page(unsigned int page_index){ 
+    KASSERT(page_index < number_of_pages_avail);
+
+    coremap[page_index].kernel = 1;
 }
 
 // sets the specified page as a user page
-void set_user_page(unsigned int page){ 
-    (void) page; 
-
+void set_user_page(unsigned int page_index){ 
+    KASSERT(page_index < number_of_pages_avail);
+    
+    coremap[page_index].kernel = 0;
 }
 
 
