@@ -1,14 +1,15 @@
 
-#include <mips/tlb.h>
-#include <spinlock.h>
-#include <spl.h>
 #include <types.h>
+#include <kern/errno.h>
+#include <lib.h>
+#include <mips/tlb.h>
+#include <spl.h>
 #include <vm.h>
 
 void
 vm_tlbshootdown_all(void)
 {
-    spl = splhigh();
+    int spl = splhigh();
     
     int i;
 	for (i=0; i<NUM_TLB; i++) {

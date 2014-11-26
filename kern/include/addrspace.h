@@ -47,6 +47,25 @@ struct vnode;
  *
  * You write this.
  */
+ 
+struct segment_table_entry {
+	vaddr_t start; 	// indicates the virtual page index where
+                                // the segment starts
+	vaddr_t end;	// indicated the virtual page index of the page
+                              // after the last page of this segment
+	unsigned int read       : 1;
+	unsigned int write      : 1;
+	unsigned int execute    : 1;
+	unsigned int :29; // padding to fill 64 bits
+};
+
+struct page_table_entry {
+    unsigned int index      : 24;
+    unsigned int in_memory  : 1;
+    unsigned int valid      : 1;
+    unsigned int dirty      : 1;
+    unsigned int            : 5;
+};
 
 struct addrspace {
 #if OPT_DUMBVM
@@ -58,7 +77,11 @@ struct addrspace {
         size_t as_npages2;
         paddr_t as_stackpbase;
 #else
-        /* Put stuff here for your VM system */
+        //stack is last segment, heap is second to last
+        struct segment_table_entry segment_table[4];
+        unsigned int segment_index : 1;
+        struct page_table_entry* page_table;
+        unsigned int ignore_permissions : 1;
 #endif
 };
 
