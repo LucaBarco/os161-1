@@ -30,6 +30,7 @@
 #include <types.h>
 #include <kern/errno.h>
 #include <lib.h>
+#include <proc.h>
 #include <addrspace.h>
 #include <vm.h>
 
@@ -48,11 +49,11 @@ as_create(void)
 	if (as == NULL) {
 		return NULL;
 	}
-
-	/*
-	 * Initialize as needed.
-	 */
-
+    
+    as->segment_index = 0;
+	as->page_table = (struct page_table_entry*)alloc_kpages(1);
+    as->ignore_permissions = 0;
+    
 	return as;
 }
 
@@ -66,11 +67,26 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 		return ENOMEM;
 	}
 
-	/*
-	 * Write this.
-	 */
-
-	(void)old;
+	int i,j;
+	for(i = 0; i < old->segment_index; i++) {
+        newas->segment_table[i].start = old->segment_table[i].start;
+        newas->segment_table[i].end = old->segment_table[i].end;
+        newas->segment_table[i].read = old->segment_table[i].read;
+        newas->segment_table[i].write = old->segment_table[i].write;
+        newas->segment_table[i].execute = old->segment_table[i].execute;
+    }
+    
+    for(i = 0; i < 1024; i++)
+        if(old->page_table[i].valid) {
+            newas->page_table[i].index = alloc_kpages(1) >> 12;
+            newas->page_table[i].valid = 1;
+            for(j = 0; j < 1024; j++)
+                if(((struct page_table_entry *)(old->page_table[i].index << 12))->valid) {
+                    ((struct page_table_entry *)(newas->page_table[i].index << 12))->index = alloc_kpages(1) >> 12;
+                    ((struct page_table_entry *)(newas->page_table[i].index << 12))->valid = 1;
+                    memcpy((void*)(((struct page_table_entry *)(newas->page_table[i].index << 12))->index << 12), (void*)(((struct page_table_entry *)(old->page_table[i].index << 12))->index << 12), 4096);
+                }
+        }
 
 	*ret = newas;
 	return 0;
@@ -79,9 +95,15 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 void
 as_destroy(struct addrspace *as)
 {
-	/*
-	 * Clean up as needed.
-	 */
+    int i,j;
+    for(i = 0; i < 1024; i++)
+        if(as->page_table[i].valid) {
+            for(j = 0; j < 1024; j++)
+                if(((struct page_table_entry *)(as->page_table[i].index << 12))->valid)
+                    free_kpages(((struct page_table_entry *)(as->page_table[i].index << 12))->index << 12);
+            free_kpages(as->page_table[i].index << 12);
+        }
+    free_kpages((vaddr_t)as->page_table);
 
 	kfree(as);
 }
@@ -91,7 +113,7 @@ as_activate(void)
 {
 	struct addrspace *as;
 
-	as = curproc_getas();
+	as = proc_getas();
 	if (as == NULL) {
 		/*
 		 * Kernel thread without an address space; leave the
@@ -100,9 +122,7 @@ as_activate(void)
 		return;
 	}
 
-	/*
-	 * Write this.
-	 */
+	vm_tlbshootdown_all();
 }
 
 void
@@ -129,53 +149,38 @@ int
 as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 		 int readable, int writeable, int executable)
 {
-	/*
-	 * Write this.
-	 */
-
-	(void)as;
-	(void)vaddr;
-	(void)sz;
-	(void)readable;
-	(void)writeable;
-	(void)executable;
-	return EUNIMP;
+    as->segment_table[as->segment_index].start = vaddr;
+    as->segment_table[as->segment_index].end = vaddr+sz;
+    as->segment_table[as->segment_index].read = readable;
+    as->segment_table[as->segment_index].write = writeable;
+    as->segment_table[as->segment_index].execute = executable;
+    
+    as->segment_index++;
+	return 0;
 }
 
 int
 as_prepare_load(struct addrspace *as)
 {
-	/*
-	 * Write this.
-	 */
-
-	(void)as;
+	as->ignore_permissions = 1;
 	return 0;
 }
 
 int
 as_complete_load(struct addrspace *as)
 {
-	/*
-	 * Write this.
-	 */
-
-	(void)as;
+	as->ignore_permissions = 0;
 	return 0;
 }
 
 int
 as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 {
-	/*
-	 * Write this.
-	 */
-
-	(void)as;
-
 	/* Initial user-level stack pointer */
 	*stackptr = USERSTACK;
-
+    
+	as_define_region(as, *stackptr, 0, 1, 1, 0);
+    
 	return 0;
 }
 
