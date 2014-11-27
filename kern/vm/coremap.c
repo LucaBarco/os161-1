@@ -35,7 +35,7 @@ void coremap_bootstrap(void){
     ram_getsize(&firstpaddr, &lastpaddr);
 
     // get the number of bytes which will be available
-    unsigned int number_of_bytes_avail = lastpaddr - firstpaddr; // I think that has to be +1.. TODO not critical
+    unsigned int number_of_bytes_avail = lastpaddr - firstpaddr; // I think that has to be +1.. TODO not critical  // Winfried: why do you think that? I mean when there are now bytes availavle, than last - first = 0, which is true, so why +1?
 
     // get the number of available pages
     number_of_pages_avail = number_of_bytes_avail / PAGE_SIZE;
@@ -169,6 +169,26 @@ vaddr_t get_page_vaddr(unsigned int page_index){
     unsigned int p_addr = firstpaddr + (page_index * PAGE_SIZE);
 
     return (vaddr_t) PADDR_TO_KVADDR(p_addr);
+}
+
+
+// returns the page index of the page with the given virtual (kernel) address 
+unsigned int get_page_index(vaddr_t p_kaddr){
+
+    vaddr_t p_addr = KVADDR_TO_PADDR(p_kaddr);
+
+    // page address has to be bigger than or equal the first page addr
+    KASSERT(p_addr >= firstpaddr);
+
+    // page addres has to be a page address
+    KASSERT(((p_addr - firstpaddr) % PAGE_SIZE) == 0);
+
+    // calculate page index
+    unsigned int page_index = (p_addr - firstpaddr) / PAGE_SIZE;
+
+    KASSERT(page_index < number_of_pages_avail);
+
+    return page_index;
 }
 
 

@@ -28,6 +28,9 @@ void coremap_selftest(void);
 // returns the virtual (kernel) address of the page with the given address
 vaddr_t get_page_vaddr(unsigned int page_index);
 
+// returns the page index of the page with the given virtual (kernel) address 
+unsigned int get_page_index(vaddr_t p_kaddr);
+
 // sets up the space in virtual memory to hold the coremap
 void coremap_bootstrap(void);
 
