@@ -49,10 +49,10 @@ as_create(void)
 	if (as == NULL) {
 		return NULL;
 	}
-    
-    as->segment_index = 0;
+    //segment table is inside the struct
+    //page table is a page
 	as->page_table = (struct page_table_entry*)alloc_kpages(1);
-    as->ignore_permissions = 0;
+    //ignore permissions should be zero
     
 	return as;
 }
@@ -67,23 +67,31 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 		return ENOMEM;
 	}
 
+    //copy over segment table
 	int i,j;
-	for(i = 0; i < old->segment_index; i++) {
-        newas->segment_table[i].start = old->segment_table[i].start;
-        newas->segment_table[i].end = old->segment_table[i].end;
-        newas->segment_table[i].read = old->segment_table[i].read;
-        newas->segment_table[i].write = old->segment_table[i].write;
-        newas->segment_table[i].execute = old->segment_table[i].execute;
+	for(i = 0; i < 4; i++) {
+        if(newas->segment_table[i].valid) {
+            newas->segment_table[i].start = old->segment_table[i].start;
+            newas->segment_table[i].end = old->segment_table[i].end;
+            newas->segment_table[i].read = old->segment_table[i].read;
+            newas->segment_table[i].write = old->segment_table[i].write;
+            newas->segment_table[i].execute = old->segment_table[i].execute;
+        }
     }
     
+    //loop thru 1st lvl page table
     for(i = 0; i < 1024; i++)
         if(old->page_table[i].valid) {
+            //if 1st lvl page table is valid, alloc_kpages a page for the newas' copy of the 2nd lvl page table
             newas->page_table[i].index = alloc_kpages(1) >> 12;
             newas->page_table[i].valid = 1;
+            //loop thru 2nd lvl page table
             for(j = 0; j < 1024; j++)
                 if(((struct page_table_entry *)(old->page_table[i].index << 12))->valid) {
+                    //if 2nd lvl page table is valid, alloc_kpages a page for the newas' copy of the page
                     ((struct page_table_entry *)(newas->page_table[i].index << 12))->index = alloc_kpages(1) >> 12;
                     ((struct page_table_entry *)(newas->page_table[i].index << 12))->valid = 1;
+                    //memcpy the page using kvaddrs
                     memcpy((void*)(((struct page_table_entry *)(newas->page_table[i].index << 12))->index << 12), (void*)(((struct page_table_entry *)(old->page_table[i].index << 12))->index << 12), 4096);
                 }
         }
@@ -95,16 +103,21 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 void
 as_destroy(struct addrspace *as)
 {
+    //loop thru 1st lvl page table
     int i,j;
     for(i = 0; i < 1024; i++)
         if(as->page_table[i].valid) {
+            //if 1st lvl page table entry is valid, loop thru 2nd lvl page table entry
             for(j = 0; j < 1024; j++)
                 if(((struct page_table_entry *)(as->page_table[i].index << 12))->valid)
+                    //if 2nd lvl page table entry is valid, free that page
                     free_kpages(((struct page_table_entry *)(as->page_table[i].index << 12))->index << 12);
+            //free 2nd lvl page table
             free_kpages(as->page_table[i].index << 12);
         }
+    //free 1st level page table
     free_kpages((vaddr_t)as->page_table);
-
+    //free addrspace struct
 	kfree(as);
 }
 
@@ -149,26 +162,45 @@ int
 as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 		 int readable, int writeable, int executable)
 {
-    as->segment_table[as->segment_index].start = vaddr;
-    as->segment_table[as->segment_index].end = vaddr+sz;
-    as->segment_table[as->segment_index].read = readable;
-    as->segment_table[as->segment_index].write = writeable;
-    as->segment_table[as->segment_index].execute = executable;
-    
-    as->segment_index++;
+    int i;
+    //readable and executable means code segment
+    if(readable && !writeable && executable)
+        i = 0;
+    //just readable means read-only data segment
+    else if(readable && !writeable && !executable)
+        i = 1;
+    //readable and writeable means data/bss/heap segment
+    else if(readable && writeable && !executable)
+        i = 2;
+    //anything else is an error.
+    else
+        return EINVAL;
+    //set up that segment table entry
+    as->segment_table[i].start = vaddr;
+    as->segment_table[i].end = vaddr+sz;
+    as->segment_table[i].valid = 1;
+    as->segment_table[i].read = readable;
+    as->segment_table[i].write = writeable;
+    as->segment_table[i].execute = executable;
 	return 0;
 }
 
 int
 as_prepare_load(struct addrspace *as)
 {
+    //set the ignore permissions bit for vm_faults in load_elf
 	as->ignore_permissions = 1;
+    //set all segments to be invalid
+    int i;
+    for(i=0;i<4;i++)
+        as->segment_table[i].valid = 0;
 	return 0;
 }
 
 int
 as_complete_load(struct addrspace *as)
 {
+    //unset ignore permissions bit
 	as->ignore_permissions = 0;
 	return 0;
 }
@@ -178,9 +210,12 @@ as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 {
 	/* Initial user-level stack pointer */
 	*stackptr = USERSTACK;
-    
-	as_define_region(as, *stackptr, 0, 1, 1, 0);
-    
+    //give read/write permissions to stack segment from USERSTACK-INITSTACKSIZE to USERSTACK
+    as->segment_table[3].start = *stackptr;
+    as->segment_table[3].end = *stackptr;
+    as->segment_table[3].read = 1;
+    as->segment_table[3].write = 1;
+    as->segment_table[3].execute = 0;
 	return 0;
 }
 
