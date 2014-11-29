@@ -34,35 +34,32 @@ alloc_kpages(int npages)
 	// return null if no page is available or strange page_index received
 	if (ret == false || page_index <= 0) {		
 		release_cm_lock();
-		KASSERT(false);
-		// return NULL;		// TODO: return null instead of kassert?
+		return NULL;	
 	}
 
  	// occupy page
-    set_occupied(page_index);
+    	set_occupied(page_index);
 
-    // Additional test
-    /*
-    // check if occupying worked
-    ret = is_free(page_index);
+    	// Additional test
+    	/*
+    	// check if occupying worked
+    	ret = is_free(page_index);
 	if (ret) {		
 		release_cm_lock();
-		KASSERT(false);
-		// return NULL;		// TODO: return null instead of kassert?
+		return NULL;
 	}
 	*/
 
 	// Set kernel flag
-    set_kernel_page(page_index);
+    	set_kernel_page(page_index);
 
-    // Additional tests
-    /*
-    // check if kernel flag is set
-    ret = is_kernel_page(page_index);
+    	// Additional tests
+    	/*
+    	// check if kernel flag is set
+    	ret = is_kernel_page(page_index);
 	if (ret == false) {		
 		release_cm_lock();
-		KASSERT(false);
-		// return NULL;		// TODO: return null instead of kassert?
+		return NULL;
 	}
 	*/
 
@@ -94,7 +91,7 @@ free_kpages(vaddr_t addr)
 
 
 	// page should be in use
-    ret = is_free(page_index);
+ 	ret = is_free(page_index);
 	if (ret == false) {		
 		release_cm_lock();
 		KASSERT(false);
