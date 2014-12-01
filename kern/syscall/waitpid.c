@@ -41,12 +41,12 @@ int sys_waitpid(int pid, int *status, int options, int *ret) {
 	//int result;
 
 	// chek if pid argument named a nonexistent process
-	/*if(pidUsed(pid) != 1)
+	if(pidUsed(pid) != 1)
 	{
 		return ESRCH;
-	}*/
+	}
 
-	// check if status is invalid		// TODO check if i understood it right
+	// check if status is invalid
 	if(status == NULL)
 	{
 		return EFAULT;
@@ -89,17 +89,12 @@ int sys_waitpid(int pid, int *status, int options, int *ret) {
 	}
   */  
     //copy child pid now that child thread successfully exited
-    copyout(&childp->p_returnvalue, (userptr_t) status, sizeof(int));
-    memcpy(ret, &pid, sizeof(int));
+    	copyout(&childp->p_returnvalue, (userptr_t) status, sizeof(int));
+	memcpy(ret, &pid, sizeof(int));
     
 	V(childp->p_exit_sem_parent);
-    //detach childthread
-    //proc_remthread(childt);
-    //finally done with child process, destroy it
-    //proc_destroy(childp);
 
 	lock_release(curp->p_childlist_lock);
-//kprintf("ALIVE THROUGH WAITPID!\n");
 	return 0;
 }
 
