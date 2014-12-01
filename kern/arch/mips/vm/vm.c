@@ -14,7 +14,7 @@
 void
 vm_bootstrap(void)
 {
-	coremap_bootstrap();
+	//coremap_bootstrap();
 }
 
 /* Allocate/free some kernel-space virtual pages */
