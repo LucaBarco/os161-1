@@ -2,9 +2,9 @@
 
 cd ~/cse451
 cd os161/kern/conf
-./config ASST2
+./config ASST3
 cd ~/cse451
-cd os161/kern/compile/ASST2/
+cd os161/kern/compile/ASST3/
 bmake depend
 bmake
 bmake install
