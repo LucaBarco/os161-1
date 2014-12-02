@@ -10,6 +10,8 @@ paddr_t firstpaddr; // first address
 paddr_t lastpaddr; // last address
 
 
+
+
 struct cm_entry* coremap;
 
 unsigned int number_of_pages_avail = -1;
@@ -31,6 +33,16 @@ void release_cm_lock(void){
 // sets up the space in virtual memory to hold the coremap
 void coremap_bootstrap(void){
 
+
+    // initialize book keeping if neccessary 
+    #ifdef BOOKKEEPING
+    cbk_pages_allocated = 0;
+    cbk_pages_freed = 0;
+    cbk_pages_in_use = 0;
+    cbk_pages_free = 0;
+    #endif
+
+
     // get the physical space which is available, we can not use steal mem at this point anymore
     ram_getsize(&firstpaddr, &lastpaddr);
 
@@ -39,6 +51,12 @@ void coremap_bootstrap(void){
 
     // get the number of available pages
     number_of_pages_avail = number_of_bytes_avail / PAGE_SIZE;
+
+    #ifdef BOOKKEEPING
+    cbk_pages_free = number_of_pages_avail;
+    #endif
+
+
 
     /* testing struct sizes */
     size_t struct_size = sizeof(struct cm_entry);
@@ -61,10 +79,9 @@ void coremap_bootstrap(void){
     unsigned int coremap_size = struct_size * number_of_pages_avail;
 
     // calculate how much pages that would be, round up to be page aligned
-    unsigned int number_of_pages =  DIVROUNDUP( coremap_size , PAGE_SIZE ); // TODO out of some reason that does not work
+    unsigned int number_of_pages =  DIVROUNDUP( coremap_size , PAGE_SIZE ); // TODO out of some reason that does not work, TODO still (feko)?
 
-    // this seems hacky and probably is hacky TODO
-    //number_of_pages = max(number_of_pages, 1u);
+
 
 
     KASSERT(number_of_pages > 0);
@@ -86,6 +103,12 @@ void coremap_bootstrap(void){
     for(unsigned int i = 0; i < number_of_pages; i++){
         coremap[i].free = 0; 
         coremap[i].kernel = 1;
+
+        #ifdef BOOKKEEPING
+        cbk_pages_free--;
+        cbk_pages_in_use++;
+        #endif
+
     }
 
     KASSERT(coremap[0].free == false);
@@ -99,10 +122,10 @@ void coremap_bootstrap(void){
     // and done.    
     kprintf("%u pages (%u bytest) occupied for the coremap\n", number_of_pages, coremap_size);   
 
+    // finally intialize the spinlock
     spinlock_init(&coremap_lock);
 
-    // do a selftest
-    
+    // and do a selftest    
     coremap_selftest();
     
 
@@ -153,6 +176,18 @@ bool get_free_page(unsigned int* page_index){
     for(unsigned int i = 0; i < number_of_pages_avail; i++){
         if(is_free(i)){
             *page_index = i;
+
+            // get the kvaddr
+            vaddr_t addr = get_page_vaddr(i);
+
+            uint32_t* page = (uint32_t*) addr;
+            (void) page;
+
+            // delete stuff
+            for(unsigned int j = 0; j < PAGE_SIZE / sizeof(uint32_t); j++){
+                //page[j] = 0xBAADF00D;
+            }
+
             return true;
         }
     }
@@ -206,6 +241,11 @@ void set_occupied(unsigned int page_index){
     
     coremap[page_index].free = false;    
 
+    #ifdef BOOKKEEPING
+    cbk_pages_free--;
+    cbk_pages_in_use++;
+    cbk_pages_allocated++;
+    #endif
 
 }
 
@@ -224,6 +264,12 @@ void set_free(unsigned int page_index){
     for(unsigned int i = 0; i < PAGE_SIZE / sizeof(uint32_t); i++){
         page[i] = 0xDEADBEEF;
     }
+
+    #ifdef BOOKKEEPING
+    cbk_pages_free++;
+    cbk_pages_in_use--;
+    cbk_pages_freed++;
+    #endif
 
 }
 
@@ -247,6 +293,8 @@ void set_user_page(unsigned int page_index){
     
     coremap[page_index].kernel = 0;
 }
+
+
 
 
 

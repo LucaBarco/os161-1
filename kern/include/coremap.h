@@ -1,6 +1,8 @@
 #ifndef _H_COREMAP_
 #define _H_COREMAP_
 
+#define BOOKKEEPING
+
 #include <types.h>
 
 struct dummy_table_entry{
@@ -54,6 +56,14 @@ void set_user_page(unsigned int page_index);
 
 // get the index of a free page. returns false if RAM full
 bool get_free_page(unsigned int* page_index);
+
+// book keeping (cbk - coremap book keeping)
+unsigned int cbk_pages_allocated;
+unsigned int cbk_pages_freed;
+unsigned int cbk_pages_in_use;
+unsigned int cbk_pages_free;
+
+
 
 
 
