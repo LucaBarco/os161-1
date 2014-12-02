@@ -153,6 +153,8 @@ vm_fault(int faulttype, vaddr_t faultaddress)
         return EFAULT;
     }
     
+    //loop through all segments and if the fault address is in that segment, check permissions
+    //might need segment table lock?
     int i;
     for(i=0;i<4;i++) {
         if(faultaddress >= as->segment_table[i].start && faultaddress < as->segment_table[i].end) {
@@ -174,31 +176,54 @@ vm_fault(int faulttype, vaddr_t faultaddress)
             }
         }
     }
-    
-    if(!as->page_table[faultaddress >> 12].valid) {
-        as->page_table[faultaddress >> 12].index = alloc_kpages(1);
-        //STEP 3: put reverse lookup entry in coremap
+    //is the first level page table entry aka the second level page table valid?
+    // to access the first level page table entry, you first get the index,
+    // which is the first ten bits of faultaddress, so bitshift down 22.
+    // you then use that to index into as->page-table to get the struct itself.
+    if(!as->page_table[faultaddress >> 22].valid) {
+        as->page_table[faultaddress >> 22].index = alloc_kpages(1) >> 12;
+    }
+    //is the second level page table entry aka the actual page valid?
+    // to access the second level page table entry, you first access the second
+    // level page table by bitshifting the first level page table entry up 12
+    // to get the vkaddr.  You then cast it as a page_table_entry array, and then
+    // access the index.  The index is the middle 10 bits of faultaddress, so you
+    // bitshift down 12, and then mask out the upper 10 bits.
+    if(!((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid) {
+        ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index = alloc_kpages(1) >> 12;
+        //unset kernel bit
+        //set reverse lookup
     }
     
+    //we are writing the vkaddr of the page itself, so we bitshift up 12 on
+    //the second level page table entry's index
+    int spl = splhigh();
     unsigned int flags = TLBLO_VALID;
     switch (faulttype) {
         case VM_FAULT_READONLY:
+            //replace the previous not dirty entry in the TLB with a dirtied one.
             i = tlb_probe(faultaddress & TLBHI_VPAGE, 0);
             KASSERT(i >= 0);
-            tlb_write(faultaddress & TLBHI_VPAGE, (as->page_table[faultaddress >> 12].index << 12)|TLBLO_DIRTY|TLBLO_VALID, i);
+            tlb_write(faultaddress & TLBHI_VPAGE, (((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index << 12)|TLBLO_DIRTY|TLBLO_VALID, i);
             break;
+        //read and write are the same except write sets the dirty bit
         case VM_FAULT_WRITE:
+            //set the dirty bit
             flags = flags | TLBLO_DIRTY;
         case VM_FAULT_READ:
+            //see if it is already in the tlb
             i = tlb_probe(faultaddress & TLBHI_VPAGE, 0);
+            //if so, replace that entry, else replace a random one
             if(i >= 0)
-                tlb_write(faultaddress & TLBHI_VPAGE, (as->page_table[faultaddress >> 12].index << 12)|flags, i);
+                tlb_write(faultaddress & TLBHI_VPAGE, (((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index << 12)|flags, i);
             else
-                tlb_random(faultaddress & TLBHI_VPAGE, (as->page_table[faultaddress >> 12].index << 12)|flags);
+                tlb_random(faultaddress & TLBHI_VPAGE, (((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index << 12)|flags);
             break;
         default:
+            splx(spl);
             return EINVAL;
     }
+    splx(spl);
     return 0;
 }
 
