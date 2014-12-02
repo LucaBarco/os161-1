@@ -204,7 +204,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
             //replace the previous not dirty entry in the TLB with a dirtied one.
             i = tlb_probe(faultaddress & TLBHI_VPAGE, 0);
             KASSERT(i >= 0);
-            tlb_write(faultaddress & TLBHI_VPAGE, (((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index << 12)|TLBLO_DIRTY|TLBLO_VALID, i);
+            tlb_write(faultaddress & TLBHI_VPAGE, KVADDR_TO_PADDR(((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index << 12)|TLBLO_DIRTY|TLBLO_VALID, i);
             break;
         //read and write are the same except write sets the dirty bit
         case VM_FAULT_WRITE:
@@ -215,9 +215,9 @@ vm_fault(int faulttype, vaddr_t faultaddress)
             i = tlb_probe(faultaddress & TLBHI_VPAGE, 0);
             //if so, replace that entry, else replace a random one
             if(i >= 0)
-                tlb_write(faultaddress & TLBHI_VPAGE, (((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index << 12)|flags, i);
+                tlb_write(faultaddress & TLBHI_VPAGE, KVADDR_TO_PADDR(((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index << 12)|flags, i);
             else
-                tlb_random(faultaddress & TLBHI_VPAGE, (((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index << 12)|flags);
+                tlb_random(faultaddress & TLBHI_VPAGE, KVADDR_TO_PADDR(((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index << 12)|flags);
             break;
         default:
             splx(spl);
