@@ -135,12 +135,15 @@ vm_tlbshootdown(const struct tlbshootdown *ts)
 int
 vm_fault(int faulttype, vaddr_t faultaddress)
 {
+    int spl = splhigh();
+
     if (curproc == NULL) {
         /*
          * No process. This is probably a kernel fault early
          * in boot. Return EFAULT so as to panic instead of
          * getting into an infinite faulting loop.
          */
+         splx(spl);
         return EFAULT;
     }
 
@@ -150,6 +153,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
          * No address space set up. This is probably also a
          * kernel fault early in boot.
         */
+        splx(spl);
         return EFAULT;
     }
     
@@ -169,6 +173,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
                         KASSERT(as->segment_table[i].write);
                         break;
                     default:
+                        splx(spl);
                         return EINVAL;
                 }
             }
@@ -191,14 +196,19 @@ vm_fault(int faulttype, vaddr_t faultaddress)
             flags = flags | TLBLO_DIRTY;
         case VM_FAULT_READ:
             i = tlb_probe(faultaddress & TLBHI_VPAGE, 0);
-            if(i >= 0)
+            // figure out physical address to write
+
+            if(i >= 0){
                 tlb_write(faultaddress & TLBHI_VPAGE, (as->page_table[faultaddress >> 12].index << 12)|flags, i);
-            else
+            }else{
                 tlb_random(faultaddress & TLBHI_VPAGE, (as->page_table[faultaddress >> 12].index << 12)|flags);
+            }
             break;
         default:
+            splx(spl);
             return EINVAL;
     }
+    splx(spl);
     return 0;
 }
 
