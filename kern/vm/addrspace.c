@@ -179,9 +179,11 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
     as->segment_table[i].start = vaddr;
     as->segment_table[i].end = vaddr+sz;
     as->segment_table[i].valid = 1;
-    as->segment_table[i].read = readable;
-    as->segment_table[i].write = writeable;
+    as->segment_table[i].read = readable >> 2;
+    as->segment_table[i].write = writeable >> 1;
     as->segment_table[i].execute = executable;
+
+    
 	return 0;
 }
 

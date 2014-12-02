@@ -41,10 +41,12 @@ int sys_waitpid(int pid, int *status, int options, int *ret) {
 	//int result;
 
 	// chek if pid argument named a nonexistent process
+	/*
 	if(pidUsed(pid) != 1)
 	{
 		return ESRCH;
 	}
+	*/
 
 	// check if status is invalid
 	if(status == NULL)
