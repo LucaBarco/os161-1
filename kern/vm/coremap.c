@@ -185,7 +185,7 @@ bool get_free_page(unsigned int* page_index){
 
             // delete stuff
             for(unsigned int j = 0; j < PAGE_SIZE / sizeof(uint32_t); j++){
-                //page[j] = 0xBAADF00D;
+                page[j] = 0;
             }
 
             return true;
