@@ -93,18 +93,19 @@ free_kpages(vaddr_t addr)
 
 	// page should be in use
  	ret = is_free(page_index);
-	if (ret == false) {		
+	if (ret == true) {		
 		release_cm_lock();
 		KASSERT(false);
 	}
 
 	// page should not be marked as kernel page
+        /*
     ret = is_kernel_page(page_index);
 	if (ret) {		
 		release_cm_lock();
 		KASSERT(false);
 	}
-
+        */
 	// free page and deadbeef it
 	set_free(page_index);
 
