@@ -5,7 +5,10 @@
 #include <spinlock.h>
 #include <bitmap.h>
 #include <coremap.h>
-
+#include <vnode.h>
+#include <uio.h>
+#include <kern/fcntl.h>
+#include <kern/errno.h>
 
 
 // allocate a static spinlock
@@ -127,6 +130,36 @@ void diskmap_bootstrap(void){
     spinlock_init(&diskmap_lock);
 }
 
+//reads a page out from disk onto physical memory
+int read_page(unsigned int page_index, vaddr_t kpage_addr) {
+    struct iovec iov;
+    struct uio io;
+    uio_kinit(&iov,&io,(void*)kpage_addr,PAGE_SIZE,((off_t)page_index) << 12, UIO_READ);
+    int res = VOP_READ(swap_disk, &io);
+    set_free(page_index);
+    return res;
+}
+
+//writes a page from physical memory out to disk, returns the disk page index
+int write_page(vaddr_t kpage_addr, unsigned int * ret) {
+    acquire_cm_lock();
+    
+    unsigned int page_index = 0xFFFFFFFF;
+    //find swappable page
+    set_occupied(page_index);
+    if(page_index == 0xFFFFFFFF)
+        return ENOMEM;
+
+    struct iovec iov;
+    struct uio io;
+    uio_kinit(&iov,&io,(void*)kpage_addr,PAGE_SIZE,((off_t)page_index) << 12, UIO_WRITE);
+    int res = VOP_WRITE(swap_disk, &io);
+    *ret = page_index;
+
+    release_cm_lock();
+    return res;
+}
+
 
 
 
@@ -160,3 +193,4 @@ void diskmap_selftest(void){
 
     dm_release_lock();
 }
+

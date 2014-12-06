@@ -25,6 +25,12 @@ bool dm_get_free_page(unsigned long* page_index);
 // !!! Since bootstrap is called directly after the coremap bootstrap we assume we get contiguous memory
 void diskmap_bootstrap(void);
 
+//read a page out from disk onto physical memory
+int read_page(unsigned int page_index, vaddr_t kpage_addr);
+
+//write a page from physical memory out to disk and returns the disk page index
+int write_page(vaddr_t kpage_addr, unsigned int * ret);
+
 
 // performs a selftest on the diskmap
 void diskmap_selftest(void);

@@ -9,6 +9,7 @@
 #include <current.h>
 #include <proc.h>
 #include <coremap.h>
+#include <diskmap.h>
 
 void
 vm_bootstrap(void)

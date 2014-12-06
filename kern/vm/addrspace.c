@@ -34,6 +34,7 @@
 #include <addrspace.h>
 #include <vm.h>
 #include <coremap.h>
+#include <diskmap.h>
 #include <current.h>
 
 /*
