@@ -10,7 +10,6 @@
 #include <proc.h>
 #include <coremap.h>
 
-
 void
 vm_bootstrap(void)
 {
@@ -160,9 +159,10 @@ vm_fault(int faulttype, vaddr_t faultaddress)
     
     //loop through all segments and if the fault address is in that segment, check permissions
     //might need segment table lock?
-    int i;
+    int i, found_segment = 0;
     for(i=0;i<4;i++) {
         if(faultaddress >= as->segment_table[i].start && faultaddress < as->segment_table[i].end) {
+          found_segment = 1;
             if(!as->ignore_permissions) {
                 switch (faulttype) {
                     //should probably throw an error somehow instead of kassert
@@ -182,6 +182,19 @@ vm_fault(int faulttype, vaddr_t faultaddress)
             }
         }
     }
+    if(!found_segment) {
+        //extend the stack if valid
+        if(as->segment_table[4].start - faultaddress < 10*PAGE_SIZE) {
+            int pages = DIVROUNDUP(as->segment_table[4].start - faultaddress, PAGE_SIZE);
+            if(as->segment_table[4].start - pages*PAGE_SIZE - as->segment_table[3].end >= 10*PAGE_SIZE) {
+                as->segment_table[4].start -= pages*PAGE_SIZE;
+            } else {
+                splx(spl);
+                return EFAULT;
+            }
+        }
+    }
+    
     //is the first level page table entry aka the second level page table valid?
     // to access the first level page table entry, you first get the index,
     // which is the first ten bits of faultaddress, so bitshift down 22.
@@ -196,13 +209,30 @@ vm_fault(int faulttype, vaddr_t faultaddress)
     // to get the vkaddr.  You then cast it as a page_table_entry array, and then
     // access the index.  The index is the middle 10 bits of faultaddress, so you
     // bitshift down 12, and then mask out the upper 10 bits.
-    if(!((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid) {
-        ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index = alloc_kpages(1) >> 12;
-        //unset kernel bit TODO
-        //set reverse lookup TODO
+    if(!((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid ||
+       ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].on_disk) {
+        //alloc a kpage and set the page table index
+        vaddr_t addr = alloc_kpages(1);
+        KASSERT(addr);
+        ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index = addr >> 12;
+        // if the page is valid, but not in memory, load it in
+        if(((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid  && ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].on_disk) {
+            //read from disk
+            
+            //zero page on disk
+            
+            //set diskmap bit to free
+            
+        }
+        //set page table on-disk bit to false
+        ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid = 0;
+        //set page table valid bit
         ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid = 1;
-        
-
+        //set coremap reverse lookup
+        set_lookup(get_page_index(addr),
+                   (struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12));
+        //unset coremap kernel bit
+        set_user_page(get_page_index(addr));
     }
     
     //we are writing the vkaddr of the page itself, so we bitshift up 12 on

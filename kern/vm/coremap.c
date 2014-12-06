@@ -96,7 +96,7 @@ void coremap_bootstrap(void){
     for(unsigned int i = 0; i < number_of_pages_avail; i++){
         coremap[i].free = 1; 
         coremap[i].kernel = 0;
-        coremap[i].page_table_entry = NULL;
+        coremap[i].pte = NULL;
     }
 
     // lock the pages which are occupied by the coremap
@@ -294,7 +294,12 @@ void set_user_page(unsigned int page_index){
     coremap[page_index].kernel = 0;
 }
 
-
+//sets the lookup of the coremap entry
+void set_lookup(unsigned int page_index, struct page_table_entry * pte) {
+    KASSERT(page_index < number_of_pages_avail);
+    
+    coremap[page_index].pte = pte;
+}
 
 
 

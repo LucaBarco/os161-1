@@ -62,7 +62,7 @@ struct segment_table_entry {
 
 struct page_table_entry {
     unsigned int index      : 24;
-    unsigned int in_memory  : 1;
+    unsigned int on_disk    : 1;
     unsigned int valid      : 1;
     unsigned int dirty      : 1;
     unsigned int            : 5;

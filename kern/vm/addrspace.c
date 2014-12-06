@@ -33,6 +33,7 @@
 #include <proc.h>
 #include <addrspace.h>
 #include <vm.h>
+#include <coremap.h>
 
 /*
  * Note! If OPT_DUMBVM is set, as is the case until you start the VM
@@ -78,21 +79,47 @@ as_copy(struct addrspace *old, struct addrspace **ret)
             newas->segment_table[i].execute = old->segment_table[i].execute;
         }
     }
+
+    vaddr_t addr;
+    unsigned int index;
     
     //loop thru 1st lvl page table
     for(i = 0; i < 1024; i++)
         if(old->page_table[i].valid) {
             //if 1st lvl page table is valid, alloc_kpages a page for the newas' copy of the 2nd lvl page table
-            newas->page_table[i].index = alloc_kpages(1) >> 12;
+            addr = alloc_kpages(1);
+            KASSERT(addr);
+            index = addr >> 12;
+            newas->page_table[i].index = index;
             newas->page_table[i].valid = 1;
             //loop thru 2nd lvl page table
             for(j = 0; j < 1024; j++)
                 if(((struct page_table_entry *)(old->page_table[i].index << 12))[j].valid) {
                     //if 2nd lvl page table is valid, alloc_kpages a page for the newas' copy of the page
-                  ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].index = alloc_kpages(1) >> 12;
+                    addr = alloc_kpages(1);
+                    KASSERT(addr);
+                    ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].index = addr >> 12;
+                    // if the page is on disk, load it in
+                    if(((struct page_table_entry *)(old->page_table[i].index << 12))[j].on_disk) {
+                        //read from disk
+                        
+                        //zero page on disk
+                        
+                        //set diskmap bit to free
+                        
+                    } else {
+                        //memcpy the page using kvaddrs
+                        memcpy((void*)(index << 12), (void*)(((struct page_table_entry *)(old->page_table[i].index << 12))[j].index << 12), PAGE_SIZE);
+                    }
+                    //set page table on-disk bit to false
+                    ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].valid = 0;
+                    //set page table valid
                     ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].valid = 1;
-                    //memcpy the page using kvaddrs
-                    memcpy((void*)(((struct page_table_entry *)(newas->page_table[i].index << 12))[j].index << 12), (void*)(((struct page_table_entry *)(old->page_table[i].index << 12))[j].index << 12), 4096);
+                    //set coremap reverse lookup
+                    set_lookup(get_page_index(addr),
+                               (struct page_table_entry *)(newas->page_table[i].index << 12));
+                    //unset coremap kernel bit
+                    set_user_page(get_page_index(addr));
                 }
         }
 
@@ -212,10 +239,10 @@ int
 as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 {
 	/* Initial user-level stack pointer */
-	*stackptr = USERSTACK;
+	*stackptr = USERSTACK-4096;
     //give read/write permissions to stack segment from USERSTACK-INITSTACKSIZE to USERSTACK
     as->segment_table[3].start = *stackptr;
-    as->segment_table[3].end = *stackptr;
+    as->segment_table[3].end = USERSTACK;
     as->segment_table[3].read = 1;
     as->segment_table[3].write = 1;
     as->segment_table[3].execute = 0;
