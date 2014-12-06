@@ -36,6 +36,7 @@
 #include <current.h>
 #include <syscall.h>
 #include <limits.h>
+#include <addrspace.h>
 
 
 //#include <syscall.h>
@@ -145,6 +146,10 @@ syscall(struct trapframe *tf)
 
 	    case SYS_waitpid:
 		err = sys_waitpid((int)tf->tf_a0, (int*)tf->tf_a1, (int)tf->tf_a2, &retval);
+		break;
+
+		case SYS_sbrk:
+		retval = (int) sbrk__(tf->tf_a0, &err);
 		break;
 
 

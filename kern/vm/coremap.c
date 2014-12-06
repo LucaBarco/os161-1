@@ -51,6 +51,7 @@ void coremap_bootstrap(void){
 
     // get the number of available pages
     number_of_pages_avail = number_of_bytes_avail / PAGE_SIZE;
+    //number_of_bytes_avail--;
 
     #ifdef BOOKKEEPING
     cbk_pages_free = number_of_pages_avail;
@@ -96,7 +97,7 @@ void coremap_bootstrap(void){
     for(unsigned int i = 0; i < number_of_pages_avail; i++){
         coremap[i].free = 1; 
         coremap[i].kernel = 0;
-        coremap[i].page_table_entry = NULL;
+        coremap[i].pte = NULL;
     }
 
     // lock the pages which are occupied by the coremap
@@ -117,6 +118,7 @@ void coremap_bootstrap(void){
     // now try to steal that space for the coremap
     // we do this by incrementing the firstpaddr pointer
     firstpaddr += number_of_pages * PAGE_SIZE;
+    number_of_pages_avail -= number_of_pages;
 
 
     // and done.    
@@ -181,7 +183,7 @@ bool get_free_page(unsigned int* page_index){
             vaddr_t addr = get_page_vaddr(i);
 
             uint32_t* page = (uint32_t*) addr;
-            (void) page;
+            //(void) page;
 
             // delete stuff
             for(unsigned int j = 0; j < PAGE_SIZE / sizeof(uint32_t); j++){
@@ -294,7 +296,12 @@ void set_user_page(unsigned int page_index){
     coremap[page_index].kernel = 0;
 }
 
-
+//sets the lookup of the coremap entry
+void set_lookup(unsigned int page_index, struct page_table_entry * pte) {
+    KASSERT(page_index < number_of_pages_avail);
+    
+    coremap[page_index].pte = pte;
+}
 
 
 

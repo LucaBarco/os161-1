@@ -4,6 +4,7 @@
 #define BOOKKEEPING
 
 #include <types.h>
+#include <addrspace.h>
 
 struct dummy_table_entry{
 	int test;
@@ -13,7 +14,7 @@ struct cm_entry{
 
     int free               				;  // indicates if the page is free
     int kernel             				;  // indicates if the page is a kernel page
-    struct dummy_table_entry *page_table_entry;   	 // pointer to the page table entry
+    struct page_table_entry *pte;   	 // pointer to the page table entry
     //unsigned int                    : 30; // this is a huge waste of space. refactor at some point
 
 };
@@ -56,6 +57,8 @@ void set_user_page(unsigned int page_index);
 
 // get the index of a free page. returns false if RAM full
 bool get_free_page(unsigned int* page_index);
+
+void set_lookup(unsigned int page_index, struct page_table_entry * pte);
 
 // book keeping (cbk - coremap book keeping)
 unsigned int cbk_pages_allocated;
