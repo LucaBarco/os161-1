@@ -90,7 +90,8 @@ bitmap_create_diskmap(struct bitmap* b, unsigned nbits)
 
         words = DIVROUNDUP(nbits, BITS_PER_WORD);
 
-        bzero(b->v, words*sizeof(WORD_TYPE));
+        unsigned nbits_up = words*sizeof(WORD_TYPE);
+        bzero(b->v, nbits_up);
         b->nbits = nbits;
 
         /* Mark any leftover bits at the end in use */

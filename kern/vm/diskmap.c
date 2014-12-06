@@ -28,7 +28,8 @@ void dm_release_lock(void){
 bool dm_is_free(unsigned long page_index){ 
     KASSERT(page_index < diskmap->nbits);
 
-    return bitmap_isset(diskmap, page_index);
+    int ret = bitmap_isset(diskmap, page_index);
+    return ret == 0? true : false;
 }
 
 
@@ -107,6 +108,7 @@ void diskmap_bootstrap(void){
     // we assume that we can allocate gontiguous pages since we call this function right after coremap_bootstrap()
     // allocate at least one page for the bitmap
     diskmap = (struct bitmap*) alloc_kpages(1);
+    diskmap->v = (WORD_TYPE *)(diskmap + sizeof(struct bitmap));
     KASSERT(diskmap != NULL);
     for(unsigned int i = 1; i < number_of_pages; i++) {
         vaddr_t ret = alloc_kpages(1);
@@ -117,12 +119,44 @@ void diskmap_bootstrap(void){
 
     // create bitmap
     bitmap_create_diskmap(diskmap, number_of_disk_pages);
+
+    // do selftest
+    diskmap_selftest();
+
+    // finally intialize the spinlock
+    spinlock_init(&diskmap_lock);
 }
 
 
 
 
+// performs a selftest on the diskmap
+void diskmap_selftest(void){
 
+    dm_acquire_lock();
 
+    KASSERT(diskmap != NULL);
+    KASSERT(diskmap->nbits > 0);
+    KASSERT(diskmap->v != NULL);
 
+    // check the first bits; have to be free
+    KASSERT(dm_is_free(0));
+    KASSERT(dm_is_free(1));
+    KASSERT(dm_is_free(2));
 
+    // check occupy specific bit
+    unsigned long bit = 23;
+    KASSERT(dm_is_free(bit));
+    dm_set_occupied(bit);
+    KASSERT(!dm_is_free(bit));
+    dm_set_free(bit);
+    KASSERT(dm_is_free(bit));
+
+    // check get free bit
+    dm_get_free_page(&bit);
+    KASSERT(!dm_is_free(bit));
+    dm_set_free(bit);
+    KASSERT(dm_is_free(bit));
+
+    dm_release_lock();
+}

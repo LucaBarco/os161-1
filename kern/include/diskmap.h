@@ -26,5 +26,8 @@ bool dm_get_free_page(unsigned long* page_index);
 void diskmap_bootstrap(void);
 
 
+// performs a selftest on the diskmap
+void diskmap_selftest(void);
+
 #endif // _H_DISKMAP_
 
