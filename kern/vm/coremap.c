@@ -134,7 +134,7 @@ void coremap_bootstrap(void){
 }
 
 
-void coremap_selftest(){
+void coremap_selftest(void){
 
     acquire_cm_lock();
 
@@ -296,6 +296,9 @@ void set_user_page(unsigned int page_index){
 
 
 
-
+// returns the number of pages available
+unsigned int get_coremap_size(void) {
+    return number_of_pages_avail;
+}
 
 

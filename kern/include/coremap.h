@@ -57,6 +57,9 @@ void set_user_page(unsigned int page_index);
 // get the index of a free page. returns false if RAM full
 bool get_free_page(unsigned int* page_index);
 
+// returns the number of pages available
+unsigned int get_coremap_size(void);
+
 // book keeping (cbk - coremap book keeping)
 unsigned int cbk_pages_allocated;
 unsigned int cbk_pages_freed;
