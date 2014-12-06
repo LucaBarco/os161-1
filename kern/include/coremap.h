@@ -60,11 +60,14 @@ bool get_free_page(unsigned int* page_index);
 
 void set_lookup(unsigned int page_index, struct page_table_entry * pte);
 
+int swap_bootstrap(void);
+
 // book keeping (cbk - coremap book keeping)
 unsigned int cbk_pages_allocated;
 unsigned int cbk_pages_freed;
 unsigned int cbk_pages_in_use;
 unsigned int cbk_pages_free;
+struct vnode* swap_disk;
 
 
 

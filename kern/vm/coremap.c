@@ -3,6 +3,8 @@
 #include <lib.h>
 #include <vm.h>
 #include <spinlock.h>
+#include <kern/fcntl.h>
+#include <vfs.h>
 
 
 // the borders of the ram after ram_bootstrap
@@ -10,7 +12,7 @@ paddr_t firstpaddr; // first address
 paddr_t lastpaddr; // last address
 
 
-
+struct vnode* swap_disk;
 
 struct cm_entry* coremap;
 
@@ -79,6 +81,7 @@ void coremap_bootstrap(void){
     // calculate the size of the coremap (in bytes)
     unsigned int coremap_size = struct_size * number_of_pages_avail;
 
+
     // calculate how much pages that would be, round up to be page aligned
     unsigned int number_of_pages =  DIVROUNDUP( coremap_size , PAGE_SIZE ); // TODO out of some reason that does not work, TODO still (feko)?
 
@@ -124,14 +127,29 @@ void coremap_bootstrap(void){
     // and done.    
     kprintf("%u pages (%u bytest) occupied for the coremap\n", number_of_pages, coremap_size);   
 
-    // finally intialize the spinlock
+    // intialize the spinlock
     spinlock_init(&coremap_lock);
 
+    
     // and do a selftest    
     coremap_selftest();
     
 
     kprintf("coremap selftest passed \n");   
+
+}
+
+int swap_bootstrap(){
+
+    
+    char filename[] = "lhd0raw:"; 
+
+    // try to open the vnode
+    int res = vfs_open(filename, O_RDWR, 0, &swap_disk); //VFS open _will_ mangle with the filename char
+    
+    KASSERT(res == 0);
+    return res;
+    
 
 }
 
