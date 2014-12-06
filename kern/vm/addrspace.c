@@ -149,7 +149,9 @@ as_destroy(struct addrspace *as)
             //if 1st lvl page table entry is valid, loop thru 2nd lvl page table entry
             for(j = 0; j < 1024; j++)
                 if(((struct page_table_entry *)(as->page_table[i].index << 12))[j].valid)
-                    //if 2nd lvl page table entry is valid, free that page
+                    //if 2nd lvl page table entry is valid and on disk, tell the diskmap to free that disk block
+                    dm_set_free(((struct page_table_entry *)(as->page_table[i].index << 12))[j].index);
+                    //if 2nd lvl page table entry is valid and in physical memory, free that page
                     free_kpages(((struct page_table_entry *)(as->page_table[i].index << 12))[j].index << 12);
             //free 2nd lvl page table
             free_kpages(as->page_table[i].index << 12);
