@@ -77,33 +77,41 @@ as_copy(struct addrspace *old, struct addrspace **ret)
     //copy over segment table
 	int i,j;
 	for(i = 0; i < 4; i++) {
-        if(newas->segment_table[i].valid) {
+        if(old->segment_table[i].valid) {
             newas->segment_table[i].start = old->segment_table[i].start;
             newas->segment_table[i].end = old->segment_table[i].end;
+            newas->segment_table[i].valid = 1;
             newas->segment_table[i].read = old->segment_table[i].read;
             newas->segment_table[i].write = old->segment_table[i].write;
             newas->segment_table[i].execute = old->segment_table[i].execute;
+            newas->segment_table[i].index = old->segment_table[i].index;
+            if(i == SG_DATA_BSS)
+                set_heap_base(newas,old->segment_table[i].end);
         }
     }
 
     vaddr_t addr;
-    unsigned int index;
     
     //loop thru 1st lvl page table
     for(i = 0; i < 1024; i++)
         if(old->page_table[i].valid) {
             //if 1st lvl page table is valid, alloc_kpages a page for the newas' copy of the 2nd lvl page table
             addr = alloc_kpages(1);
-            KASSERT(addr);
-            index = addr >> 12;
-            newas->page_table[i].index = index;
+            if(!addr) {
+                //TODO set priority level
+                return ENOMEM;
+            }
+            newas->page_table[i].index = addr >> 12;
             newas->page_table[i].valid = 1;
             //loop thru 2nd lvl page table
             for(j = 0; j < 1024; j++)
                 if(((struct page_table_entry *)(old->page_table[i].index << 12))[j].valid) {
                     //if 2nd lvl page table is valid, alloc_kpages a page for the newas' copy of the page
                     addr = alloc_kpages(1);
-                    KASSERT(addr);
+                    if(!addr) {
+                        //TODO: set priority level
+                        return ENOMEM;
+                    }
                     ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].index = addr >> 12;
                     // if the page is on disk, load it in
                     if(((struct page_table_entry *)(old->page_table[i].index << 12))[j].on_disk) {
@@ -115,10 +123,10 @@ as_copy(struct addrspace *old, struct addrspace **ret)
                         
                     } else {
                         //memcpy the page using kvaddrs
-                        memcpy((void*)(index << 12), (void*)(((struct page_table_entry *)(old->page_table[i].index << 12))[j].index << 12), PAGE_SIZE);
+                        memcpy((void*)(addr), (void*)(((struct page_table_entry *)(old->page_table[i].index << 12))[j].index << 12), PAGE_SIZE);
                     }
                     //set page table on-disk bit to false
-                    ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].valid = 0;
+                    ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].on_disk = 0;
                     //set page table valid
                     ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].valid = 1;
                     //set coremap reverse lookup
@@ -159,6 +167,8 @@ as_activate(void)
 {
 	struct addrspace *as;
 
+	vm_tlbshootdown_all();
+
 	as = proc_getas();
 	if (as == NULL) {
 		/*
@@ -167,8 +177,6 @@ as_activate(void)
 		 */
 		return;
 	}
-
-	vm_tlbshootdown_all();
 }
 
 void
@@ -273,7 +281,7 @@ int
 as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 		 int readable, int writeable, int executable)
 {
-    int i;
+    unsigned int i;
     //readable and executable means code segment
     if(readable && !writeable && executable)
         i = SG_CODE;
@@ -305,11 +313,7 @@ as_prepare_load(struct addrspace *as)
 {
     //set the ignore permissions bit for vm_faults in load_elf
 	as->ignore_permissions = 1;
-    //set all segments to be invalid
-    int i;
-    for(i=0;i<4;i++)
-        as->segment_table[i].valid = 0;
-	return 0;
+    return 0;
 }
 
 int
@@ -325,10 +329,11 @@ int
 as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 {
 	/* Initial user-level stack pointer */
-	*stackptr = USERSTACK-4096;
+	*stackptr = USERSTACK;
     //give read/write permissions to stack segment from USERSTACK-INITSTACKSIZE to USERSTACK
     as->segment_table[SG_STACK].start = *stackptr;
     as->segment_table[SG_STACK].end = *stackptr;
+    as->segment_table[SG_STACK].valid = 1;
     as->segment_table[SG_STACK].read = 1;
     as->segment_table[SG_STACK].write = 1;
     as->segment_table[SG_STACK].execute = 0;

@@ -167,7 +167,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
                 switch (faulttype) {
                     //should probably throw an error somehow instead of kassert
                     case VM_FAULT_READONLY:
-                        KASSERT(as->segment_table[i].write && as->page_table[faultaddress >> 12].valid);
+                        KASSERT(as->segment_table[i].write && as->page_table[faultaddress >> 22].valid && ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid);
                         break;
                     case VM_FAULT_READ:
                         KASSERT(as->segment_table[i].read);
@@ -184,10 +184,10 @@ vm_fault(int faulttype, vaddr_t faultaddress)
     }
     if(!found_segment) {
         //extend the stack if valid
-        if(as->segment_table[4].start - faultaddress < 10*PAGE_SIZE) {
-            int pages = DIVROUNDUP(as->segment_table[4].start - faultaddress, PAGE_SIZE);
-            if(as->segment_table[4].start - pages*PAGE_SIZE - as->segment_table[3].end >= 10*PAGE_SIZE) {
-                as->segment_table[4].start -= pages*PAGE_SIZE;
+        if(as->segment_table[SG_STACK].start - faultaddress < 10*PAGE_SIZE) {
+            int pages = DIVROUNDUP(as->segment_table[SG_STACK].start - faultaddress, PAGE_SIZE);
+            if(as->segment_table[SG_STACK].start - pages*PAGE_SIZE - as->segment_table[SG_DATA_BSS].end >= 10*PAGE_SIZE) {
+                as->segment_table[SG_STACK].start -= pages*PAGE_SIZE;
             } else {
                 splx(spl);
                 return EFAULT;
@@ -200,7 +200,13 @@ vm_fault(int faulttype, vaddr_t faultaddress)
     // which is the first ten bits of faultaddress, so bitshift down 22.
     // you then use that to index into as->page-table to get the struct itself.
     if(!as->page_table[faultaddress >> 22].valid) {
-        as->page_table[faultaddress >> 22].index = alloc_kpages(1) >> 12;
+        vaddr_t addr = alloc_kpages(1);
+        if(!addr) {
+            splx(spl);
+            return EFAULT;
+        }
+
+        as->page_table[faultaddress >> 22].index = addr >> 12;
         as->page_table[faultaddress >> 22].valid = 1;
     }
     //is the second level page table entry aka the actual page valid?
@@ -213,7 +219,10 @@ vm_fault(int faulttype, vaddr_t faultaddress)
        ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].on_disk) {
         //alloc a kpage and set the page table index
         vaddr_t addr = alloc_kpages(1);
-        KASSERT(addr);
+        if(!addr) {
+            splx(spl);
+            return EFAULT;
+        }
         ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index = addr >> 12;
         // if the page is valid, but not in memory, load it in
         if(((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid  && ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].on_disk) {
