@@ -34,6 +34,10 @@
 #include <addrspace.h>
 #include <vm.h>
 #include <coremap.h>
+<<<<<<< HEAD
+=======
+#include <current.h>
+>>>>>>> ff686841eb4141285da90144ce6923040c9d5444
 
 /*
  * Note! If OPT_DUMBVM is set, as is the case until you start the VM
@@ -54,6 +58,11 @@ as_create(void)
     //page table is a page
 	as->page_table = (struct page_table_entry*)alloc_kpages(1);
     //ignore permissions should be zero
+
+
+    as->heap_base = -1;
+    as->heap_top = -1;
+    as->heap_base_set = 0;
     
 	return as;
 }
@@ -175,6 +184,84 @@ as_deactivate(void)
 	 */
 }
 
+
+// sets the heap base depending on the end of the data/bss segment. called in as_define_region
+void set_heap_base(struct addrspace *as, vaddr_t end_of_segment){
+
+    // do the page alignment
+    as->heap_base = ROUNDUP(end_of_segment, PAGE_SIZE);
+    as->heap_top = as->heap_base;
+    as->heap_base_set = 1;
+    
+}
+
+
+void* sbrk__(intptr_t amt, int *err){
+
+    struct addrspace* as = curthread->t_proc->p_addrspace;
+
+    // lock the coremap
+    acquire_cm_lock();
+
+
+    // see if the heap_base was set
+    if(as->heap_base_set == 0){
+        release_cm_lock();
+        return (void*) -1;
+    }
+
+    vaddr_t old_heap_top = as->heap_top;
+
+    // calculate the new heap_top
+    vaddr_t new_heap_top = as->heap_top + amt;
+
+    // do some checking
+    // * smaller than the heap_base?
+    if(new_heap_top<as->heap_base){
+        *err = EINVAL;
+        release_cm_lock();
+        return (void*) -1;
+    }
+
+    // * not page aligned
+    vaddr_t rounded = ROUNDUP(new_heap_top, PAGE_SIZE);
+    if(rounded != new_heap_top){
+        // the amount would not be page aligned. change that.
+        //new_heap_top = rounded;
+
+        /*
+        *err = EINVAL;
+        release_cm_lock();
+        return (void*) -1;   
+        */
+    }
+
+    
+    // * check if the new top would intersect with the stack segment
+
+    if(as->segment_table[SG_STACK].start < new_heap_top){
+        *err = ENOMEM;
+        release_cm_lock();
+        return (void*) -1;   
+    }
+
+
+    // everything is okay, set the new heap top
+    as->heap_top = new_heap_top;
+
+    // chang the segment size
+    struct segment_table_entry* heap_segment = &as->segment_table[SG_DATA_BSS];
+    heap_segment->end = new_heap_top;
+
+    *err = 0;
+
+
+
+    release_cm_lock();
+    return (void *) old_heap_top;
+}
+
+
 /*
  * Set up a segment at virtual address VADDR of size MEMSIZE. The
  * segment in memory extends from VADDR up to (but not including)
@@ -192,15 +279,16 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
     int i;
     //readable and executable means code segment
     if(readable && !writeable && executable)
-        i = 0;
+        i = SG_CODE;
     //just readable means read-only data segment
     else if(readable && !writeable && !executable)
-        i = 1;
+        i = SG_STATIC_DATA;
     //readable and writeable means data/bss/heap segment
-    else if(readable && writeable && !executable)
-        i = 2;
+    else if(readable && writeable && !executable){
+        i = SG_DATA_BSS;
+        set_heap_base(as, vaddr+sz);
     //anything else is an error.
-    else
+    }else
         return EINVAL;
     //set up that segment table entry
     as->segment_table[i].start = vaddr;
@@ -209,6 +297,7 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
     as->segment_table[i].read = readable >> 2;
     as->segment_table[i].write = writeable >> 1;
     as->segment_table[i].execute = executable;
+    as->segment_table[i].index = i;
 
     
 	return 0;
@@ -241,11 +330,12 @@ as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 	/* Initial user-level stack pointer */
 	*stackptr = USERSTACK-4096;
     //give read/write permissions to stack segment from USERSTACK-INITSTACKSIZE to USERSTACK
-    as->segment_table[3].start = *stackptr;
-    as->segment_table[3].end = USERSTACK;
-    as->segment_table[3].read = 1;
-    as->segment_table[3].write = 1;
-    as->segment_table[3].execute = 0;
+    as->segment_table[SG_STACK].start = *stackptr;
+    as->segment_table[SG_STACK].end = *stackptr;
+    as->segment_table[SG_STACK].read = 1;
+    as->segment_table[SG_STACK].write = 1;
+    as->segment_table[SG_STACK].execute = 0;
+    as->segment_table[SG_STACK].index = SG_STACK;
 	return 0;
 }
 

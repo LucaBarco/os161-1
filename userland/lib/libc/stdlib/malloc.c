@@ -41,7 +41,7 @@
 #include <err.h>
 #include <stdint.h>  // for uintptr_t on non-OS/161 platforms
 
-#undef MALLOCDEBUG
+//#undef MALLOCDEBUG
 
 #if defined(__mips__) || defined(__i386__)
 #define MALLOC32
