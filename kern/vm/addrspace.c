@@ -34,10 +34,7 @@
 #include <addrspace.h>
 #include <vm.h>
 #include <coremap.h>
-<<<<<<< HEAD
-=======
 #include <current.h>
->>>>>>> ff686841eb4141285da90144ce6923040c9d5444
 
 /*
  * Note! If OPT_DUMBVM is set, as is the case until you start the VM
