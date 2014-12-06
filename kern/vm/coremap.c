@@ -146,11 +146,42 @@ int swap_bootstrap(){
 
     // try to open the vnode
     int res = vfs_open(filename, O_RDWR, 0, &swap_disk); //VFS open _will_ mangle with the filename char
-    
+
     KASSERT(res == 0);
     return res;
-    
+}
 
+
+
+// returns a swappable page. a swapable page is every page which is not a kernel page and occupied
+bool get_swappable_page(unsigned int* page_index){
+
+    // get a random page index
+    unsigned int r = random();
+
+    unsigned int random_page_index = r % number_of_pages_avail;
+    KASSERT(random_page_index >0 && random_page_index < number_of_pages_avail);
+
+    // find a free page starting at the random_page_index
+    unsigned int counter = 0;
+    bool found_page = false;
+
+    while(counter < number_of_pages_avail && !found_page){
+
+        if(coremap[random_page_index].kernel == 0 && coremap[random_page_index].free == 0){
+            found_page = true;
+            break;
+        }
+        counter++;
+        random_page_index++;
+        random_page_index = random_page_index % number_of_pages_avail;
+    }
+    if(found_page)
+        KASSERT(coremap[random_page_index].kernel == 0 && coremap[random_page_index].free == 0);
+
+    *page_index = random_page_index;
+
+    return found_page;
 }
 
 

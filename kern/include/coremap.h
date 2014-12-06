@@ -60,7 +60,13 @@ bool get_free_page(unsigned int* page_index);
 
 void set_lookup(unsigned int page_index, struct page_table_entry * pte);
 
+// boot strap for the swap disk. must be called after vfs_bootstrap and mainbus for the devices
 int swap_bootstrap(void);
+
+// return
+bool get_swappable_page(unsigned int* page_index);
+
+
 
 // book keeping (cbk - coremap book keeping)
 unsigned int cbk_pages_allocated;
