@@ -135,7 +135,6 @@ void coremap_bootstrap(void){
 
 }
 
-<<<<<<< HEAD
 // returns a swappable page. a swapable page is every page which is not a kernel page and occupied
 bool get_swappable_page(unsigned int* page_index){
 
