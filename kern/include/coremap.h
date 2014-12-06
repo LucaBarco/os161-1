@@ -64,6 +64,11 @@ void set_lookup(unsigned int page_index, struct page_table_entry * pte);
 // returns the number of pages available
 unsigned int get_coremap_size(void);
 
+// returns a swappable page. a swapable page is every page which is not a kernel page and occupied
+bool get_swappable_page(unsigned int* page_index);
+
+
+
 // book keeping (cbk - coremap book keeping)
 unsigned int cbk_pages_allocated;
 unsigned int cbk_pages_freed;
