@@ -217,22 +217,21 @@ vm_fault(int faulttype, vaddr_t faultaddress)
     // bitshift down 12, and then mask out the upper 10 bits.
     if(!((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid ||
        ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].on_disk) {
-        //alloc a kpage and set the page table index
+        //alloc a kpage
         vaddr_t addr = alloc_kpages(1);
         if(!addr) {
             splx(spl);
             return EFAULT;
         }
-        ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index = addr >> 12;
         // if the page is valid, but not in memory, load it in
         if(((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid  && ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].on_disk) {
-            //read from disk
-            
-            //zero page on disk
-            
-            //set diskmap bit to free
-            
+            if(read_page(((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index, addr)) {
+                splx(spl);
+                return EFAULT;
+            }
         }
+        // set page table index
+        ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index = addr >> 12;
         //set page table on-disk bit to false
         ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid = 0;
         //set page table valid bit

@@ -58,7 +58,14 @@ void set_user_page(unsigned int page_index);
 // get the index of a free page. returns false if RAM full
 bool get_free_page(unsigned int* page_index);
 
+// set the reverse lookup entry of the page
 void set_lookup(unsigned int page_index, struct page_table_entry * pte);
+
+//read a page out from disk onto physical memory
+int read_page(unsigned int page_index, vaddr_t kpage_addr);
+
+//write a page from physical memory out to disk and returns the disk page index
+int write_page(vaddr_t kpage_addr, unsigned int * ret);
 
 // book keeping (cbk - coremap book keeping)
 unsigned int cbk_pages_allocated;

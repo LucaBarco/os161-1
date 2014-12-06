@@ -115,12 +115,9 @@ as_copy(struct addrspace *old, struct addrspace **ret)
                     ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].index = addr >> 12;
                     // if the page is on disk, load it in
                     if(((struct page_table_entry *)(old->page_table[i].index << 12))[j].on_disk) {
-                        //read from disk
-                        
-                        //zero page on disk
-                        
-                        //set diskmap bit to free
-                        
+                        if(read_page(((struct page_table_entry *)(old->page_table[i].index << 12))[j].index, addr)) {
+                            return EFAULT;
+                        }            
                     } else {
                         //memcpy the page using kvaddrs
                         memcpy((void*)(addr), (void*)(((struct page_table_entry *)(old->page_table[i].index << 12))[j].index << 12), PAGE_SIZE);
