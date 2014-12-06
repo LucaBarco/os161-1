@@ -118,7 +118,9 @@ boot(void)
 	thread_bootstrap();
 	hardclock_bootstrap();
 	vfs_bootstrap();
+
 	kheap_nextgeneration();
+
 
 	/* Probe and initialize devices. Interrupts should come on. */
 	kprintf("Device probe...\n");
@@ -129,6 +131,8 @@ boot(void)
 	pseudoconfig();
 	kprintf("\n");
 	kheap_nextgeneration();
+
+	swap_bootstrap();
 
 	/* Late phase of initialization. */
 	vm_bootstrap();

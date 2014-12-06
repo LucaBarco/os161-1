@@ -6,6 +6,7 @@
 #include <bitmap.h>
 #include <coremap.h>
 #include <vnode.h>
+#include <vfs.h>
 #include <uio.h>
 #include <kern/fcntl.h>
 #include <kern/errno.h>
@@ -15,6 +16,8 @@
 static struct spinlock diskmap_lock;
 
 struct bitmap* diskmap;
+
+struct vnode* swap_disk;
 
 
 // acquires the diskmap lock
@@ -28,7 +31,7 @@ void dm_release_lock(void){
 }
 
 // returns true if the page on disk is not occupied, false otherwise
-bool dm_is_free(unsigned long page_index){ 
+bool dm_is_free(unsigned int page_index){ 
     KASSERT(page_index < diskmap->nbits);
 
     int ret = bitmap_isset(diskmap, page_index);
@@ -38,7 +41,7 @@ bool dm_is_free(unsigned long page_index){
 
 
 // sets the specified page to free
-void dm_set_free(unsigned long page_index) {
+void dm_set_free(unsigned int page_index) {
     KASSERT(page_index < diskmap->nbits);
 
 
@@ -52,7 +55,7 @@ void dm_set_free(unsigned long page_index) {
 
 
 // sets the specified page to occupied
-void dm_set_occupied(unsigned long page_index){ 
+void dm_set_occupied(unsigned int page_index){ 
     KASSERT(page_index < diskmap->nbits);
     
     if(!is_free(page_index)) {
@@ -65,10 +68,10 @@ void dm_set_occupied(unsigned long page_index){
 
 
 // get the index of a free page. page will be marked as occupied. returns false if disk full
-bool dm_get_free_page(unsigned long* page_index){
+bool dm_get_free_page(unsigned int* page_index){
     KASSERT(page_index != NULL);
 
-    for(unsigned long i = 0; i < diskmap->nbits; i++){
+    for(unsigned int i = 0; i < diskmap->nbits; i++){
         if(is_free(i)){
             *page_index = i;
 
@@ -94,7 +97,7 @@ void diskmap_bootstrap(void){
     unsigned int number_of_pages_avail = get_coremap_size();
 
     // number of available pages upscaled
-    unsigned long number_of_disk_pages = number_of_pages_avail * 16;
+    unsigned int number_of_disk_pages = number_of_pages_avail * 16;
 
     // calculate number of pages needed to store the diskmap (bits and bitmap struct)
     unsigned int number_of_pages = DIVROUNDUP(DIVROUNDUP(number_of_disk_pages, 8) + (unsigned int)sizeof(struct bitmap), PAGE_SIZE); 
@@ -130,33 +133,43 @@ void diskmap_bootstrap(void){
     spinlock_init(&diskmap_lock);
 }
 
+int swap_bootstrap(){
+    char filename[] = "lhd0raw:";
+
+    // try to open the vnode
+    int res = vfs_open(filename, O_RDWR, 0, &swap_disk); //VFS open _will_ mangle with the filename char
+    
+    KASSERT(res == 0);
+    return res;
+    
+
+}
+
 //reads a page out from disk onto physical memory
 int read_page(unsigned int page_index, vaddr_t kpage_addr) {
     struct iovec iov;
     struct uio io;
     uio_kinit(&iov,&io,(void*)kpage_addr,PAGE_SIZE,((off_t)page_index) << 12, UIO_READ);
     int res = VOP_READ(swap_disk, &io);
-    set_free(page_index);
+    dm_set_free(page_index);
     return res;
 }
 
 //writes a page from physical memory out to disk, returns the disk page index
 int write_page(vaddr_t kpage_addr, unsigned int * ret) {
-    acquire_cm_lock();
+    dm_acquire_lock();
     
     unsigned int page_index = 0xFFFFFFFF;
-    //find swappable page
-    set_occupied(page_index);
-    if(page_index == 0xFFFFFFFF)
+    if(!dm_get_free_page(&page_index))
         return ENOMEM;
+
+    dm_release_lock();
 
     struct iovec iov;
     struct uio io;
     uio_kinit(&iov,&io,(void*)kpage_addr,PAGE_SIZE,((off_t)page_index) << 12, UIO_WRITE);
     int res = VOP_WRITE(swap_disk, &io);
     *ret = page_index;
-
-    release_cm_lock();
     return res;
 }
 
@@ -178,7 +191,7 @@ void diskmap_selftest(void){
     KASSERT(dm_is_free(2));
 
     // check occupy specific bit
-    unsigned long bit = 23;
+    unsigned int bit = 23;
     KASSERT(dm_is_free(bit));
     dm_set_occupied(bit);
     KASSERT(!dm_is_free(bit));

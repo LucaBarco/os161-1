@@ -69,6 +69,7 @@ unsigned int cbk_pages_allocated;
 unsigned int cbk_pages_freed;
 unsigned int cbk_pages_in_use;
 unsigned int cbk_pages_free;
+struct vnode* swap_disk;
 
 
 
