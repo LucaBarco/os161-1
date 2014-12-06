@@ -93,18 +93,19 @@ free_kpages(vaddr_t addr)
 
 	// page should be in use
  	ret = is_free(page_index);
-	if (ret == false) {		
+	if (ret == true) {		
 		release_cm_lock();
 		KASSERT(false);
 	}
 
 	// page should not be marked as kernel page
+        /*
     ret = is_kernel_page(page_index);
 	if (ret) {		
 		release_cm_lock();
 		KASSERT(false);
 	}
-
+        */
 	// free page and deadbeef it
 	set_free(page_index);
 
@@ -187,6 +188,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
     // you then use that to index into as->page-table to get the struct itself.
     if(!as->page_table[faultaddress >> 22].valid) {
         as->page_table[faultaddress >> 22].index = alloc_kpages(1) >> 12;
+        as->page_table[faultaddress >> 22].valid = 1;
     }
     //is the second level page table entry aka the actual page valid?
     // to access the second level page table entry, you first access the second
@@ -196,13 +198,16 @@ vm_fault(int faulttype, vaddr_t faultaddress)
     // bitshift down 12, and then mask out the upper 10 bits.
     if(!((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid) {
         ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index = alloc_kpages(1) >> 12;
-        //unset kernel bit
-        //set reverse lookup
+        //unset kernel bit TODO
+        //set reverse lookup TODO
+        ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid = 1;
+        
+
     }
     
     //we are writing the vkaddr of the page itself, so we bitshift up 12 on
     //the second level page table entry's index
-    int spl = splhigh();
+    //int spl = splhigh();
     unsigned int flags = TLBLO_VALID;
     switch (faulttype) {
         case VM_FAULT_READONLY:
