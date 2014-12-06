@@ -17,6 +17,26 @@ vm_bootstrap(void)
 	//coremap_bootstrap();
 }
 
+void
+vm_tlbshootdown_all(void)
+{
+    int spl = splhigh();
+    
+    int i;
+    for (i=0; i<NUM_TLB; i++) {
+        tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
+    }
+
+    splx(spl);
+}
+
+void
+vm_tlbshootdown(const struct tlbshootdown *ts)
+{
+    (void)ts;
+    vm_tlbshootdown_all();
+}
+
 /* Allocate/free some kernel-space virtual pages */
 vaddr_t
 alloc_kpages(int npages)
@@ -24,40 +44,81 @@ alloc_kpages(int npages)
 	acquire_cm_lock();
 
 	vaddr_t page_addr = (vaddr_t)NULL;
-	unsigned int  page_index;
+	unsigned int  page_index = 0;
+    unsigned int  disk_page_index = 0;
 	bool ret = false;
 
 	// for simplicity we only allow to allocate one pace per call
 	KASSERT(npages == 1);
 
+
 	// get a free page
 	ret = get_free_page(&page_index);
-	// return null if no page is available or strange page_index received
+	
+
+
+    // return null if no page is available or strange page_index received
 	if (ret == false || page_index <= 0) {		
-		release_cm_lock();
-		return (vaddr_t)NULL;	
+
+		if(!get_swappable_page(&page_index)){
+            release_cm_lock();
+            return (vaddr_t)NULL; 
+        }
+
+        KASSERT(is_kernel_page(page_index) == 0);
+
+        // occupy page
+        set_occupied(page_index);
+
+        //set kernel flag
+        set_kernel_page(page_index);
+        release_cm_lock();
+
+
+        // write out page
+        if(write_page(get_page_vaddr(page_index), &disk_page_index)!=0) {
+            //release_cm_lock();
+            return (vaddr_t)NULL; 
+        }
+
+        
+
+        // update page table entry
+        struct page_table_entry *  pte = get_lookup(page_index);
+        pte->index = disk_page_index;
+        pte->on_disk = 1;
+
+        //TODO change to tlb_shootdown()
+        vm_tlbshootdown_all();
+
 	}
+    else {
 
- 	// occupy page
-    	set_occupied(page_index);
+     	// occupy page
+        set_occupied(page_index);
 
-    	// Additional test
-    	/*
-    	// check if occupying worked
-    	ret = is_free(page_index);
-	if (ret) {		
-		release_cm_lock();
-		return NULL;
-	}
-	*/
+        // Set kernel flag
+        set_kernel_page(page_index);
 
-	// Set kernel flag
-    	set_kernel_page(page_index);
+        release_cm_lock();
 
-    	// Additional tests
-    	/*
-    	// check if kernel flag is set
-    	ret = is_kernel_page(page_index);
+        // Additional test
+        /*
+        // check if occupying worked
+        ret = is_free(page_index);
+    	if (ret) {		
+    		release_cm_lock();
+    		return NULL;
+    	}
+    	*/
+    }
+
+	
+
+    // Additional tests
+    /*
+    // check if kernel flag is set
+    ret = is_kernel_page(page_index);
 	if (ret == false) {		
 		release_cm_lock();
 		return NULL;
@@ -66,8 +127,11 @@ alloc_kpages(int npages)
 
 	// get address of page get_page_vaddr returns KVADDR
 	page_addr = get_page_vaddr(page_index);
+    
+    // zero the page
+    bzero((void *)page_addr, PAGE_SIZE);
 
-	release_cm_lock();
+	//release_cm_lock();
 
 	return page_addr;
 }
@@ -111,26 +175,6 @@ free_kpages(vaddr_t addr)
 
 
 	release_cm_lock();
-}
-
-void
-vm_tlbshootdown_all(void)
-{
-    int spl = splhigh();
-    
-    int i;
-    for (i=0; i<NUM_TLB; i++) {
-        tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
-    }
-
-    splx(spl);
-}
-
-void
-vm_tlbshootdown(const struct tlbshootdown *ts)
-{
-    (void)ts;
-    vm_tlbshootdown_all();
 }
 
 int
@@ -234,7 +278,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
         // set page table index
         ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index = addr >> 12;
         //set page table on-disk bit to false
-        ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid = 0;
+        ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].on_disk = 0;
         //set page table valid bit
         ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid = 1;
         //set coremap reverse lookup
@@ -242,6 +286,8 @@ vm_fault(int faulttype, vaddr_t faultaddress)
                    (struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12));
         //unset coremap kernel bit
         set_user_page(get_page_index(addr));
+
+        vm_tlbshootdown_all();
     }
     
     //we are writing the vkaddr of the page itself, so we bitshift up 12 on

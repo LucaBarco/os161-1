@@ -30,6 +30,7 @@
 #include <types.h>
 #include <kern/errno.h>
 #include <lib.h>
+#include <spl.h>
 #include <proc.h>
 #include <addrspace.h>
 #include <vm.h>
@@ -68,10 +69,12 @@ as_create(void)
 int
 as_copy(struct addrspace *old, struct addrspace **ret)
 {
+    int spl = splhigh();
 	struct addrspace *newas;
 
 	newas = as_create();
 	if (newas==NULL) {
+        splx(spl);
 		return ENOMEM;
 	}
 
@@ -99,7 +102,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
             //if 1st lvl page table is valid, alloc_kpages a page for the newas' copy of the 2nd lvl page table
             addr = alloc_kpages(1);
             if(!addr) {
-                //TODO set priority level
+                splx(spl);
                 return ENOMEM;
             }
             newas->page_table[i].index = addr >> 12;
@@ -110,13 +113,14 @@ as_copy(struct addrspace *old, struct addrspace **ret)
                     //if 2nd lvl page table is valid, alloc_kpages a page for the newas' copy of the page
                     addr = alloc_kpages(1);
                     if(!addr) {
-                        //TODO: set priority level
+                        splx(spl);
                         return ENOMEM;
                     }
                     ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].index = addr >> 12;
                     // if the page is on disk, load it in
                     if(((struct page_table_entry *)(old->page_table[i].index << 12))[j].on_disk) {
                         if(read_page(((struct page_table_entry *)(old->page_table[i].index << 12))[j].index, addr)) {
+                            splx(spl);
                             return EFAULT;
                         }            
                     } else {
@@ -136,6 +140,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
         }
 
 	*ret = newas;
+    splx(spl);
 	return 0;
 }
 
@@ -144,18 +149,25 @@ as_destroy(struct addrspace *as)
 {
     //loop thru 1st lvl page table
     int i,j;
-    for(i = 0; i < 1024; i++)
+    for(i = 0; i < 1024; i++) {
         if(as->page_table[i].valid) {
             //if 1st lvl page table entry is valid, loop thru 2nd lvl page table entry
-            for(j = 0; j < 1024; j++)
-                if(((struct page_table_entry *)(as->page_table[i].index << 12))[j].valid)
-                    //if 2nd lvl page table entry is valid and on disk, tell the diskmap to free that disk block
-                    dm_set_free(((struct page_table_entry *)(as->page_table[i].index << 12))[j].index);
-                    //if 2nd lvl page table entry is valid and in physical memory, free that page
-                    free_kpages(((struct page_table_entry *)(as->page_table[i].index << 12))[j].index << 12);
+            for(j = 0; j < 1024; j++) {
+                if(((struct page_table_entry *)(as->page_table[i].index << 12))[j].valid) {
+                    if(((struct page_table_entry *)(as->page_table[i].index << 12))[j].on_disk) {
+                        //if 2nd lvl page table entry is valid and on disk, tell the diskmap to free that disk block
+                        dm_set_free(((struct page_table_entry *)(as->page_table[i].index << 12))[j].index);
+                    }
+                    else {
+                        //if 2nd lvl page table entry is valid and in physical memory, free that page
+                        free_kpages(((struct page_table_entry *)(as->page_table[i].index << 12))[j].index << 12);
+                    }
+                }  
+            }  
             //free 2nd lvl page table
             free_kpages(as->page_table[i].index << 12);
         }
+    }
     //free 1st level page table
     free_kpages((vaddr_t)as->page_table);
     //free addrspace struct

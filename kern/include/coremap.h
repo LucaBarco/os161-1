@@ -61,6 +61,9 @@ bool get_free_page(unsigned int* page_index);
 // set the reverse lookup entry of the page
 void set_lookup(unsigned int page_index, struct page_table_entry * pte);
 
+// get the reverse lookup entrz of the index
+struct page_table_entry * get_lookup(unsigned int page_index);
+
 // returns the number of pages available
 unsigned int get_coremap_size(void);
 

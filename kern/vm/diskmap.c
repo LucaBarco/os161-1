@@ -45,7 +45,7 @@ void dm_set_free(unsigned int page_index) {
     KASSERT(page_index < diskmap->nbits);
 
 
-    if(is_free(page_index)) {
+    if(dm_is_free(page_index)) {
         // page is already free. // TDOD: is this an error?
         // KASSERT(false);
     }
@@ -58,7 +58,7 @@ void dm_set_free(unsigned int page_index) {
 void dm_set_occupied(unsigned int page_index){ 
     KASSERT(page_index < diskmap->nbits);
     
-    if(!is_free(page_index)) {
+    if(!dm_is_free(page_index)) {
         // page is already in use
         KASSERT(false);
     }
@@ -72,7 +72,7 @@ bool dm_get_free_page(unsigned int* page_index){
     KASSERT(page_index != NULL);
 
     for(unsigned int i = 0; i < diskmap->nbits; i++){
-        if(is_free(i)){
+        if(dm_is_free(i)){
             *page_index = i;
 
             dm_set_occupied(i);
@@ -160,8 +160,11 @@ int write_page(vaddr_t kpage_addr, unsigned int * ret) {
     dm_acquire_lock();
     
     unsigned int page_index = 0xFFFFFFFF;
-    if(!dm_get_free_page(&page_index))
+    if(!dm_get_free_page(&page_index)){
+        dm_release_lock();
         return ENOMEM;
+    }
+        
 
     dm_release_lock();
 

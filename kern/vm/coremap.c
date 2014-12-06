@@ -334,6 +334,14 @@ void set_lookup(unsigned int page_index, struct page_table_entry * pte) {
     coremap[page_index].pte = pte;
 }
 
+// get the reverse lookup entrz of the index
+struct page_table_entry * get_lookup(unsigned int page_index) {
+    KASSERT(page_index < number_of_pages_avail);
+    
+    return coremap[page_index].pte;
+}
+
+
 // returns the number of pages available
 unsigned int get_coremap_size(void) {
     return number_of_pages_avail;
