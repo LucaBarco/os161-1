@@ -3,14 +3,12 @@
 #include <lib.h>
 #include <vm.h>
 #include <spinlock.h>
+#include <kern/fcntl.h>
 
 
 // the borders of the ram after ram_bootstrap
 paddr_t firstpaddr; // first address
 paddr_t lastpaddr; // last address
-
-
-
 
 struct cm_entry* coremap;
 
@@ -51,6 +49,7 @@ void coremap_bootstrap(void){
 
     // get the number of available pages
     number_of_pages_avail = number_of_bytes_avail / PAGE_SIZE;
+    //number_of_bytes_avail--;
 
     #ifdef BOOKKEEPING
     cbk_pages_free = number_of_pages_avail;
@@ -78,6 +77,7 @@ void coremap_bootstrap(void){
     // calculate the size of the coremap (in bytes)
     unsigned int coremap_size = struct_size * number_of_pages_avail;
 
+
     // calculate how much pages that would be, round up to be page aligned
     unsigned int number_of_pages =  DIVROUNDUP( coremap_size , PAGE_SIZE ); // TODO out of some reason that does not work, TODO still (feko)?
 
@@ -96,7 +96,7 @@ void coremap_bootstrap(void){
     for(unsigned int i = 0; i < number_of_pages_avail; i++){
         coremap[i].free = 1; 
         coremap[i].kernel = 0;
-        coremap[i].page_table_entry = NULL;
+        coremap[i].pte = NULL;
     }
 
     // lock the pages which are occupied by the coremap
@@ -117,14 +117,16 @@ void coremap_bootstrap(void){
     // now try to steal that space for the coremap
     // we do this by incrementing the firstpaddr pointer
     firstpaddr += number_of_pages * PAGE_SIZE;
+    number_of_pages_avail -= number_of_pages;
 
 
     // and done.    
     kprintf("%u pages (%u bytest) occupied for the coremap\n", number_of_pages, coremap_size);   
 
-    // finally intialize the spinlock
+    // intialize the spinlock
     spinlock_init(&coremap_lock);
 
+    
     // and do a selftest    
     coremap_selftest();
     
@@ -133,8 +135,39 @@ void coremap_bootstrap(void){
 
 }
 
+// returns a swappable page. a swapable page is every page which is not a kernel page and occupied
+bool get_swappable_page(unsigned int* page_index){
 
-void coremap_selftest(){
+    // get a random page index
+    unsigned int r = random();
+
+    unsigned int random_page_index = r % number_of_pages_avail;
+    KASSERT(random_page_index >0 && random_page_index < number_of_pages_avail);
+
+    // find a free page starting at the random_page_index
+    unsigned int counter = 0;
+    bool found_page = false;
+
+    while(counter < number_of_pages_avail && !found_page){
+
+        if(coremap[random_page_index].kernel == 0 && coremap[random_page_index].free == 0){
+            found_page = true;
+            break;
+        }
+        counter++;
+        random_page_index++;
+        random_page_index = random_page_index % number_of_pages_avail;
+    }
+    if(found_page)
+        KASSERT(coremap[random_page_index].kernel == 0 && coremap[random_page_index].free == 0);
+
+    *page_index = random_page_index;
+
+    return found_page;
+}
+
+
+void coremap_selftest(void){
 
     acquire_cm_lock();
 
@@ -181,7 +214,7 @@ bool get_free_page(unsigned int* page_index){
             vaddr_t addr = get_page_vaddr(i);
 
             uint32_t* page = (uint32_t*) addr;
-            (void) page;
+            //(void) page;
 
             // delete stuff
             for(unsigned int j = 0; j < PAGE_SIZE / sizeof(uint32_t); j++){
@@ -294,8 +327,16 @@ void set_user_page(unsigned int page_index){
     coremap[page_index].kernel = 0;
 }
 
+//sets the lookup of the coremap entry
+void set_lookup(unsigned int page_index, struct page_table_entry * pte) {
+    KASSERT(page_index < number_of_pages_avail);
+    
+    coremap[page_index].pte = pte;
+}
 
-
-
+// returns the number of pages available
+unsigned int get_coremap_size(void) {
+    return number_of_pages_avail;
+}
 
 

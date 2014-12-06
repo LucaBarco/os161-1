@@ -51,6 +51,7 @@
 #include <version.h>
 #include <pid.h>
 #include <coremap.h>
+#include <diskmap.h>
 #include "autoconf.h"  // for pseudoconfig
 
 
@@ -111,12 +112,15 @@ boot(void)
 	/* Early initialization. */
 	ram_bootstrap();
 	coremap_bootstrap();
+	diskmap_bootstrap();
 	pid_bootstrap();
 	proc_bootstrap();
 	thread_bootstrap();
 	hardclock_bootstrap();
 	vfs_bootstrap();
+
 	kheap_nextgeneration();
+
 
 	/* Probe and initialize devices. Interrupts should come on. */
 	kprintf("Device probe...\n");
@@ -127,6 +131,8 @@ boot(void)
 	pseudoconfig();
 	kprintf("\n");
 	kheap_nextgeneration();
+
+	swap_bootstrap();
 
 	/* Late phase of initialization. */
 	vm_bootstrap();

@@ -41,6 +41,8 @@
 struct vnode;
 
 
+
+
 /*
  * Address space - data structure associated with the virtual memory
  * space of a process.
@@ -57,12 +59,13 @@ struct segment_table_entry {
 	unsigned int read       : 1;
 	unsigned int write      : 1;
 	unsigned int execute    : 1;
-	unsigned int :28; // padding to fill 64 bits
+  unsigned int index      : 2;
+	unsigned int :26; // padding to fill 64 bits
 };
 
 struct page_table_entry {
     unsigned int index      : 24;
-    unsigned int in_memory  : 1;
+    unsigned int on_disk    : 1;
     unsigned int valid      : 1;
     unsigned int dirty      : 1;
     unsigned int            : 5;
@@ -81,9 +84,21 @@ struct addrspace {
         //stack is last segment, heap is second to last
         struct segment_table_entry segment_table[4];
         struct page_table_entry* page_table;
+        unsigned int heap_base_set : 1;
+        vaddr_t heap_base; // the heap base. this is set in set_heap_ase
+        vaddr_t heap_top; // points to the top of the heap
         unsigned int ignore_permissions : 1;
+
+
+
 #endif
 };
+
+
+#define SG_CODE 0
+#define SG_STATIC_DATA 1
+#define SG_DATA_BSS 2
+#define SG_STACK 3
 
 /*
  * Functions in addrspace.c:
@@ -140,6 +155,9 @@ int               as_define_region(struct addrspace *as,
 int               as_prepare_load(struct addrspace *as);
 int               as_complete_load(struct addrspace *as);
 int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr);
+
+void              set_heap_base(struct addrspace *as, vaddr_t end_of_segment);
+void *            sbrk__(intptr_t amt, int *err);
 
 
 /*
