@@ -30,6 +30,11 @@
 #ifndef _BITMAP_H_
 #define _BITMAP_H_
 
+#define BITS_PER_WORD   (CHAR_BIT)
+#define WORD_TYPE       unsigned char
+#define WORD_ALLBITS    (0xff)
+
+
 /*
  * Fixed-size array of bits. (Intended for storage management.)
  *
@@ -45,9 +50,15 @@
  */
 
 
-struct bitmap;  /* Opaque. */
+//struct bitmap;  /* Opaque. */
+
+struct bitmap {
+        unsigned nbits;
+        WORD_TYPE *v;
+};
 
 struct bitmap *bitmap_create(unsigned nbits);
+void		   bitmap_create_diskmap(struct bitmap* b, unsigned nbits);
 void          *bitmap_getdata(struct bitmap *);
 int            bitmap_alloc(struct bitmap *, unsigned *index);
 void           bitmap_mark(struct bitmap *, unsigned index);

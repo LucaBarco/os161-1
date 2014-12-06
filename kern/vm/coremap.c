@@ -4,15 +4,11 @@
 #include <vm.h>
 #include <spinlock.h>
 #include <kern/fcntl.h>
-#include <vfs.h>
 
 
 // the borders of the ram after ram_bootstrap
 paddr_t firstpaddr; // first address
 paddr_t lastpaddr; // last address
-
-
-struct vnode* swap_disk;
 
 struct cm_entry* coremap;
 
@@ -139,20 +135,7 @@ void coremap_bootstrap(void){
 
 }
 
-int swap_bootstrap(){
-
-    
-    char filename[] = "lhd0raw:"; 
-
-    // try to open the vnode
-    int res = vfs_open(filename, O_RDWR, 0, &swap_disk); //VFS open _will_ mangle with the filename char
-
-    KASSERT(res == 0);
-    return res;
-}
-
-
-
+<<<<<<< HEAD
 // returns a swappable page. a swapable page is every page which is not a kernel page and occupied
 bool get_swappable_page(unsigned int* page_index){
 
@@ -185,7 +168,7 @@ bool get_swappable_page(unsigned int* page_index){
 }
 
 
-void coremap_selftest(){
+void coremap_selftest(void){
 
     acquire_cm_lock();
 
@@ -352,6 +335,9 @@ void set_lookup(unsigned int page_index, struct page_table_entry * pte) {
     coremap[page_index].pte = pte;
 }
 
-
+// returns the number of pages available
+unsigned int get_coremap_size(void) {
+    return number_of_pages_avail;
+}
 
 

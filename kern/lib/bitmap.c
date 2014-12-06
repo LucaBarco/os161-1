@@ -43,14 +43,8 @@
  * bitmap data saved on disk becomes endian-dependent, which is a
  * severe nuisance.
  */
-#define BITS_PER_WORD   (CHAR_BIT)
-#define WORD_TYPE       unsigned char
-#define WORD_ALLBITS    (0xff)
 
-struct bitmap {
-        unsigned nbits;
-        WORD_TYPE *v;
-};
+
 
 
 struct bitmap *
@@ -88,6 +82,32 @@ bitmap_create(unsigned nbits)
 
         return b;
 }
+
+void
+bitmap_create_diskmap(struct bitmap* b, unsigned nbits)
+{
+        unsigned words;
+
+        words = DIVROUNDUP(nbits, BITS_PER_WORD);
+
+        unsigned nbits_up = words*sizeof(WORD_TYPE);
+        bzero(b->v, nbits_up);
+        b->nbits = nbits;
+
+        /* Mark any leftover bits at the end in use */
+        if (words > nbits / BITS_PER_WORD) {
+                unsigned j, ix = words-1;
+                unsigned overbits = nbits - ix*BITS_PER_WORD;
+
+                KASSERT(nbits / BITS_PER_WORD == words-1);
+                KASSERT(overbits > 0 && overbits < BITS_PER_WORD);
+
+                for (j=overbits; j<BITS_PER_WORD; j++) {
+                        b->v[ix] |= ((WORD_TYPE)1 << j);
+                }
+        }
+}
+
 
 void *
 bitmap_getdata(struct bitmap *b)
