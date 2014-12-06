@@ -139,7 +139,7 @@ void coremap_bootstrap(void){
 }
 
 
-void coremap_selftest(){
+void coremap_selftest(void){
 
     acquire_cm_lock();
 
@@ -335,4 +335,10 @@ int write_page(vaddr_t kpage_addr, unsigned int * ret) {
     release_cm_lock();
     return res;
 }
+
+// returns the number of pages available
+unsigned int get_coremap_size(void) {
+    return number_of_pages_avail;
+}
+
 

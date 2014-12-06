@@ -347,6 +347,7 @@ file      proc/proc.c
 #
 
 file      vm/coremap.c
+file      vm/diskmap.c
 
 file      vm/kmalloc.c
 optofffile dumbvm   arch/mips/vm/vm.c
