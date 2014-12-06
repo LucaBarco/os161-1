@@ -63,7 +63,7 @@ void set_lookup(unsigned int page_index, struct page_table_entry * pte);
 // boot strap for the swap disk. must be called after vfs_bootstrap and mainbus for the devices
 int swap_bootstrap(void);
 
-// return
+// returns a swappable page. a swapable page is every page which is not a kernel page and occupied
 bool get_swappable_page(unsigned int* page_index);
 
 
