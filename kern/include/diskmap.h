@@ -4,6 +4,10 @@
 #include <types.h>
 
 
+
+#define PHYS_MEM_SCALE 16
+
+
 // acquires / releases the diskmapmap lock
 void dm_acquire_lock(void);
 void dm_release_lock(void);
@@ -39,6 +43,9 @@ int write_page(vaddr_t kpage_addr, unsigned int * ret);
 
 // performs a selftest on the diskmap
 void diskmap_selftest(void);
+
+// returns the number of free disk pages
+unsigned int dm_get_number_of_free_pages(void);
 
 #endif // _H_DISKMAP_
 

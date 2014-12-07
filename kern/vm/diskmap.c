@@ -21,6 +21,12 @@ struct bitmap* diskmap;
 struct vnode* swap_disk;
 
 
+
+
+unsigned int free_dm_pages;
+unsigned int number_of_disk_pages;
+
+
 // acquires the diskmap lock
 void dm_acquire_lock(void){
     spinlock_acquire(&diskmap_lock);
@@ -44,6 +50,10 @@ bool dm_is_free(unsigned int page_index){
     return ret == 0? true : false;
 }
 
+unsigned int dm_get_number_of_free_pages(){
+    return free_dm_pages;
+}
+
 
 
 // sets the specified page to free
@@ -53,8 +63,11 @@ void dm_set_free(unsigned int page_index) {
 
     if(dm_is_free(page_index)) {
         // page is already free. // TDOD: is this an error?
-        // KASSERT(false);
+        KASSERT(false);
     }
+
+    free_dm_pages++;
+    KASSERT(free_dm_pages <= number_of_disk_pages);
 
     bitmap_unmark(diskmap, page_index);
 }
@@ -68,6 +81,11 @@ void dm_set_occupied(unsigned int page_index){
         // page is already in use
         KASSERT(false);
     }
+
+    KASSERT(free_dm_pages != 0);
+
+    free_dm_pages--;
+    
 
     bitmap_mark(diskmap, page_index);
 }
@@ -103,7 +121,9 @@ void diskmap_bootstrap(void){
     unsigned int number_of_pages_avail = get_coremap_size();
 
     // number of available pages upscaled
-    unsigned int number_of_disk_pages = number_of_pages_avail * 16;
+    number_of_disk_pages = number_of_pages_avail * PHYS_MEM_SCALE;
+
+    free_dm_pages = number_of_disk_pages;
 
     // calculate number of pages needed to store the diskmap (bits and bitmap struct)
     unsigned int number_of_pages = DIVROUNDUP(DIVROUNDUP(number_of_disk_pages, 8) + (unsigned int)sizeof(struct bitmap), PAGE_SIZE); 
@@ -216,6 +236,8 @@ void diskmap_selftest(void){
     dm_set_free(bit);
     KASSERT(dm_is_free(bit));
 
+
+    KASSERT(number_of_disk_pages == free_dm_pages);
     dm_release_lock();
 }
 
