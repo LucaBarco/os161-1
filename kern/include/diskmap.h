@@ -8,6 +8,9 @@
 void dm_acquire_lock(void);
 void dm_release_lock(void);
 
+// returns number of pages 
+unsigned int dm_get_size(void);
+
 // returns true if the page on disk is not occupied, false otherwise
 bool dm_is_free(unsigned int page_index);
 

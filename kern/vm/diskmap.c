@@ -10,6 +10,7 @@
 #include <uio.h>
 #include <kern/fcntl.h>
 #include <kern/errno.h>
+#include <kern/stat.h>
 
 
 // allocate a static spinlock
@@ -28,6 +29,11 @@ void dm_acquire_lock(void){
 // releases the diskmap lock
 void dm_release_lock(void){
     spinlock_release(&diskmap_lock);
+}
+
+// return number of pages
+unsigned int dm_get_size(void) {
+    return diskmap->nbits;
 }
 
 // returns true if the page on disk is not occupied, false otherwise
@@ -140,6 +146,9 @@ int swap_bootstrap(){
     int res = vfs_open(filename, O_RDWR, 0, &swap_disk); //VFS open _will_ mangle with the filename char
     
     KASSERT(res == 0);
+    struct stat s;
+    VOP_STAT(swap_disk, &s);
+    KASSERT((((off_t)dm_get_size()) << 12) < s.st_size);
     return res;
     
 
