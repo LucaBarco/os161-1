@@ -255,8 +255,8 @@ void* sbrk__(intptr_t amt, int *err){
 
     
     // * check if the new top would intersect with the stack segment
-
-    if(as->segment_table[SG_STACK].start < new_heap_top){
+    unsigned int new_heap_size = new_heap_top - as->heap_base;
+    if(as->segment_table[SG_STACK].start < new_heap_top || new_heap_size > (get_coremap_size() << 11)){
         *err = ENOMEM;
         release_cm_lock();
         return (void*) -1;   
