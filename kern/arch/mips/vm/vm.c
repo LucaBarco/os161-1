@@ -62,7 +62,6 @@ alloc_kpages(int npages)
 
 		if(!get_swappable_page(&page_index)){
             release_cm_lock();
-            KASSERT(false);
             return (vaddr_t)NULL; 
         }
 
@@ -79,7 +78,6 @@ alloc_kpages(int npages)
         // write out page
         if(write_page(get_page_vaddr(page_index), &disk_page_index)!=0) {
             //release_cm_lock();
-            KASSERT(false);
             return (vaddr_t)NULL; 
         }
 
