@@ -142,7 +142,7 @@ bool get_swappable_page(unsigned int* page_index){
     unsigned int r = random();
 
     unsigned int random_page_index = r % number_of_pages_avail;
-    KASSERT(random_page_index >0 && random_page_index < number_of_pages_avail);
+    KASSERT(random_page_index < number_of_pages_avail);
 
     // find a free page starting at the random_page_index
     unsigned int counter = 0;

@@ -133,7 +133,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
                     ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].valid = 1;
                     //set coremap reverse lookup
                     set_lookup(get_page_index(addr),
-                               (struct page_table_entry *)(newas->page_table[i].index << 12));
+                               &(((struct page_table_entry *)(newas->page_table[i].index << 12))[j]));
                     //unset coremap kernel bit
                     set_user_page(get_page_index(addr));
                 }

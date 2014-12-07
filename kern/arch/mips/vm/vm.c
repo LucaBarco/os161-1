@@ -283,7 +283,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
         ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid = 1;
         //set coremap reverse lookup
         set_lookup(get_page_index(addr),
-                   (struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12));
+                   &(((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023]));
         //unset coremap kernel bit
         set_user_page(get_page_index(addr));
 
