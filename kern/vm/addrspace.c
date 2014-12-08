@@ -136,6 +136,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
                     //set page table valid
                     ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].valid = 1;
                     //set coremap reverse lookup
+                    KASSERT(((struct page_table_entry *)(newas->page_table[i].index << 12))+j >= (struct page_table_entry*)MIPS_KSEG0);
                     set_lookup(get_page_index(addr),
                                ((struct page_table_entry *)(newas->page_table[i].index << 12))+j);
                     //unset coremap kernel bit

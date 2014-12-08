@@ -68,23 +68,26 @@ alloc_kpages(int npages)
         KASSERT(is_kernel_page(page_index) == 0);
 
         // occupy page
-        set_occupied(page_index);
+        KASSERT(!is_free(page_index));
+        //set_occupied(page_index);
 
         //set kernel flag
         set_kernel_page(page_index);
-        release_cm_lock();
+        //release_cm_lock();
 
 
         // write out page
         if(write_page(get_page_vaddr(page_index), &disk_page_index)!=0) {
-            //release_cm_lock();
+            release_cm_lock();
             return (vaddr_t)NULL; 
         }
 
         
-
+        
         // update page table entry
         struct page_table_entry *  pte = get_lookup(page_index);
+        KASSERT(pte->valid);
+        KASSERT(pte->on_disk==0);
         pte->index = disk_page_index;
         pte->on_disk = 1;
 
@@ -100,7 +103,7 @@ alloc_kpages(int npages)
         // Set kernel flag
         set_kernel_page(page_index);
 
-        release_cm_lock();
+        //release_cm_lock();
 
         // Additional test
         /*
@@ -112,6 +115,8 @@ alloc_kpages(int npages)
     	}
     	*/
     }
+
+    set_lookup(page_index, NULL);
 
 	
 
@@ -131,7 +136,7 @@ alloc_kpages(int npages)
     // zero the page
     bzero((void *)page_addr, PAGE_SIZE);
 
-	//release_cm_lock();
+	release_cm_lock();
 
 	return page_addr;
 }
@@ -285,6 +290,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
         //set coremap reverse lookup
         struct page_table_entry * second_page_table = (struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12);
         unsigned int second_index = (faultaddress >> 12)&1023;
+        KASSERT(second_page_table+second_index >= (struct page_table_entry *)MIPS_KSEG0);
         set_lookup(get_page_index(addr),
         //           ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))+((unsigned int)((faultaddress >> 12)&1023))*((unsigned int)sizeof(struct page_table_entry)));
                      second_page_table + second_index);

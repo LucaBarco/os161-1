@@ -14,7 +14,7 @@
 
 
 // allocate a static spinlock
-static struct spinlock diskmap_lock;
+static struct spinlock diskmap_lock = SPINLOCK_INITIALIZER;
 
 struct bitmap* diskmap;
 
@@ -156,7 +156,7 @@ void diskmap_bootstrap(void){
     diskmap_selftest();
 
     // finally intialize the spinlock
-    spinlock_init(&diskmap_lock);
+    //spinlock_init(&diskmap_lock);
 }
 
 int swap_bootstrap(){
@@ -185,16 +185,19 @@ int read_page(unsigned int page_index, vaddr_t kpage_addr) {
 
 //writes a page from physical memory out to disk, returns the disk page index
 int write_page(vaddr_t kpage_addr, unsigned int * ret) {
-    dm_acquire_lock();
+    //dm_acquire_lock();
+    struct page_table_entry * pte = get_lookup(get_page_index(kpage_addr));
+    KASSERT(pte->valid);
+    KASSERT(pte->on_disk == 0);
     
     unsigned int page_index = 0xFFFFFFFF;
     if(!dm_get_free_page(&page_index)){
-        dm_release_lock();
+        //dm_release_lock();
         return ENOMEM;
     }
         
 
-    dm_release_lock();
+    //dm_release_lock();
 
     struct iovec iov;
     struct uio io;

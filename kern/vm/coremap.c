@@ -4,6 +4,7 @@
 #include <vm.h>
 #include <spinlock.h>
 #include <kern/fcntl.h>
+#include <synch.h>
 
 
 // the borders of the ram after ram_bootstrap
@@ -15,17 +16,21 @@ struct cm_entry* coremap;
 unsigned int number_of_pages_avail = -1;
 
 // allocate a static spinlock
-static struct spinlock coremap_lock;
+//static struct spinlock coremap_lock = SPINLOCK_INITIALIZER;
+static struct lock * paging_lock;
 
+static bool lock_initialized = false;
 
 // acquires the coremap lock
-void acquire_cm_lock(void){
-    spinlock_acquire(&coremap_lock);
+void acquire_cm_lock(void){ 
+    if(lock_initialized)
+	    lock_acquire(paging_lock);
 }
 
 // releases the coremap lock
 void release_cm_lock(void){
-    spinlock_release(&coremap_lock);
+    if(lock_initialized)
+    	lock_release(paging_lock);
 }
 
 // sets up the space in virtual memory to hold the coremap
@@ -124,7 +129,7 @@ void coremap_bootstrap(void){
     kprintf("%u pages (%u bytest) occupied for the coremap\n", number_of_pages, coremap_size);   
 
     // intialize the spinlock
-    spinlock_init(&coremap_lock);
+    //spinlock_init(&coremap_lock);
 
     
     // and do a selftest    
@@ -132,6 +137,9 @@ void coremap_bootstrap(void){
     
 
     kprintf("coremap selftest passed \n");   
+
+    paging_lock = lock_create("paging_lock");
+    lock_initialized = true;
 
 }
 
@@ -173,7 +181,7 @@ bool get_swappable_page(unsigned int* page_index){
 
 void coremap_selftest(void){
 
-    acquire_cm_lock();
+    //acquire_cm_lock();
 
     KASSERT(coremap[0].free == false);
     KASSERT(coremap[0].kernel == true);
@@ -204,7 +212,7 @@ void coremap_selftest(void){
     check = is_free(free_page_index);
     KASSERT(check);
 
-    release_cm_lock();
+    //release_cm_lock();
 
 }
 
@@ -275,7 +283,7 @@ bool is_free(unsigned int page_index){
 // sets the specified page to occupied
 void set_occupied(unsigned int page_index){ 
     KASSERT(page_index < number_of_pages_avail);
-    
+    KASSERT(coremap[page_index].free == true);
     coremap[page_index].free = false;    
 
     #ifdef BOOKKEEPING
@@ -289,7 +297,7 @@ void set_occupied(unsigned int page_index){
 // sets the specified page to free and writes deadbeef
 void set_free(unsigned int page_index){ 
     KASSERT(page_index < number_of_pages_avail);
- 
+    KASSERT(coremap[page_index].free == false);
     coremap[page_index].free = true;
 
     // get the kvaddr
