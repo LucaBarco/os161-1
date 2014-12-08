@@ -164,12 +164,12 @@ as_destroy(struct addrspace *as)
                     }
                     else {
                         //if 2nd lvl page table entry is valid and in physical memory, free that page
-                        //free_kpages(((struct page_table_entry *)(as->page_table[i].index << 12))[j].index << 12);
+                        free_kpages(((struct page_table_entry *)(as->page_table[i].index << 12))[j].index << 12);
                     }
                 }  
             }  
             //free 2nd lvl page table
-            //free_kpages(as->page_table[i].index << 12);
+            free_kpages(as->page_table[i].index << 12);
         }
     }
     //free 1st level page table
@@ -183,8 +183,6 @@ as_activate(void)
 {
 	struct addrspace *as;
 
-	vm_tlbshootdown_all();
-
 	as = proc_getas();
 	if (as == NULL) {
 		/*
@@ -193,6 +191,8 @@ as_activate(void)
 		 */
 		return;
 	}
+
+	vm_tlbshootdown_all();
 }
 
 void
