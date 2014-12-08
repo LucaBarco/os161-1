@@ -274,6 +274,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
                 splx(spl);
                 return EFAULT;
             }
+            dm_set_free(((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index);
         }
         // set page table index
         ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].index = addr >> 12;
@@ -282,8 +283,11 @@ vm_fault(int faulttype, vaddr_t faultaddress)
         //set page table valid bit
         ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023].valid = 1;
         //set coremap reverse lookup
+        struct page_table_entry * second_page_table = (struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12);
+        unsigned int second_index = (faultaddress >> 12)&1023;
         set_lookup(get_page_index(addr),
-                   &(((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))[(faultaddress >> 12)&1023]));
+        //           ((struct page_table_entry *)(as->page_table[faultaddress >> 22].index << 12))+((unsigned int)((faultaddress >> 12)&1023))*((unsigned int)sizeof(struct page_table_entry)));
+                     second_page_table + second_index);
         //unset coremap kernel bit
         set_user_page(get_page_index(addr));
 

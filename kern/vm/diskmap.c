@@ -180,7 +180,6 @@ int read_page(unsigned int page_index, vaddr_t kpage_addr) {
     struct uio io;
     uio_kinit(&iov,&io,(void*)kpage_addr,PAGE_SIZE,((off_t)page_index) << 12, UIO_READ);
     int res = VOP_READ(swap_disk, &io);
-    dm_set_free(page_index);
     return res;
 }
 

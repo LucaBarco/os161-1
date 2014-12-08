@@ -158,10 +158,14 @@ bool get_swappable_page(unsigned int* page_index){
         random_page_index++;
         random_page_index = random_page_index % number_of_pages_avail;
     }
-    if(found_page)
+    if(found_page){
         KASSERT(coremap[random_page_index].kernel == 0 && coremap[random_page_index].free == 0);
+	KASSERT(random_page_index < number_of_pages_avail);
+
+    }
 
     *page_index = random_page_index;
+
 
     return found_page;
 }

@@ -56,6 +56,7 @@ as_create(void)
     //segment table is inside the struct
     //page table is a page
 	as->page_table = (struct page_table_entry*)alloc_kpages(1);
+        KASSERT(as->page_table != NULL);
     //ignore permissions should be zero
 
 
@@ -79,7 +80,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 	}
 
     //copy over segment table
-	int i,j;
+	unsigned int i,j;
 	for(i = 0; i < 4; i++) {
         if(old->segment_table[i].valid) {
             newas->segment_table[i].start = old->segment_table[i].start;
@@ -89,8 +90,11 @@ as_copy(struct addrspace *old, struct addrspace **ret)
             newas->segment_table[i].write = old->segment_table[i].write;
             newas->segment_table[i].execute = old->segment_table[i].execute;
             newas->segment_table[i].index = old->segment_table[i].index;
-            if(i == SG_DATA_BSS)
-                set_heap_base(newas,old->segment_table[i].end);
+            if(i == SG_DATA_BSS) {
+                newas->heap_base = old->heap_base;
+                newas->heap_top = old->heap_top;
+                newas->heap_base_set = old->heap_base_set;
+            }
         }
     }
 
@@ -133,7 +137,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
                     ((struct page_table_entry *)(newas->page_table[i].index << 12))[j].valid = 1;
                     //set coremap reverse lookup
                     set_lookup(get_page_index(addr),
-                               &(((struct page_table_entry *)(newas->page_table[i].index << 12))[j]));
+                               ((struct page_table_entry *)(newas->page_table[i].index << 12))+j);
                     //unset coremap kernel bit
                     set_user_page(get_page_index(addr));
                 }
@@ -160,12 +164,12 @@ as_destroy(struct addrspace *as)
                     }
                     else {
                         //if 2nd lvl page table entry is valid and in physical memory, free that page
-                        free_kpages(((struct page_table_entry *)(as->page_table[i].index << 12))[j].index << 12);
+                        //free_kpages(((struct page_table_entry *)(as->page_table[i].index << 12))[j].index << 12);
                     }
                 }  
             }  
             //free 2nd lvl page table
-            free_kpages(as->page_table[i].index << 12);
+            //free_kpages(as->page_table[i].index << 12);
         }
     }
     //free 1st level page table
